@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Flask app</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='/index.css') }}">
+  <script
+  src="https://code.jquery.com/jquery-2.2.4.min.js"
+  integrity="sha256-BbhdlvQf/xTY9gja0Dq3HiwQF8LaCRTXxZKRutelT44="
+  crossorigin="anonymous"></script>
+  <script type="text/javascript" src="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+  <link rel="stylesheet" type="text/css" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
+  <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.11.1/bootstrap-table.min.css">
+  <script type='text/javascript' src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.11.1/bootstrap-table.min.js"></script>
+  <style type='text/css'>
+    .row-index {
+      width: 50px;
+      display: inline-block;
+    }
+  </style>
+  <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-
+        awesome/4.7.0/css/font-awesome.min.css">
+  </head>
+  <body>
+    <header>
+      <div class="container">
+      	<img src="./static/logo.png">
+        <h2 class="logo">Scan python packages for security metadata</h2>
+        <strong><nav>
+          <br>
+          <h4>Scan the entire python package repository:</h4>
+          <a href="{{ url_for('top_warnings') }}">List all packages by highest warning count per warning types [LIVE!]</a><br>
+          <a href="{{ url_for('sum_warning_count') }}">List all packages by warning count and severity scores</a><br>
+          <a href="{{ url_for('diff_dates') }}">List all packages with the most changes in severity warnings between two dates -- <font color="red">100 new since 3/12/2021</font></a><br>
+          <br>
+          <h4>Examine individual packages:</h4>
+          <a href="{{ url_for('single_package') }}">List detailed warnings for a specific package of your choice</a><br>
+          <a href="{{ url_for('side_by_side') }}">Compare warnings of two packages (i.e. side-by-side view)</a><br>
+          <a href="{{ url_for('compare_average') }}">Compare warnings of a packages to warnings for a benchmark package of that domain</a><br>
+          <br>
+        </nav></strong>
+      </div>
+    </header>
+    <div class="container">
+      {% block content %}
+      {% endblock %}
+    </div>
+  </body>
+</html>

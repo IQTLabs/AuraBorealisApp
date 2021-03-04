@@ -1,11 +1,14 @@
 from flask import Flask, render_template, request
+from flask_datepicker import datepicker
 import json
 from es.elastic.api import connect
 from search import PackageSearch
 import os
 SECRET_KEY = os.urandom(32)
 
-conn = connect(host='localhost')
+
+
+conn = connect(host='192.168.68.9')
 curs = conn.cursor()
 
 # Package requests
@@ -248,9 +251,10 @@ A example for creating a Table that is sortable by its header
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = SECRET_KEY
+datepicker(app)
 data = [
         {
-            "package": "requests",
+            "package": "<a href='/single_package?package=requests'>requests</a>",
             "leakingsecret": count_leakingsecret_requests[0],
             "suspiciousfile": count_suspiciousfile_requests[0],
             "sqlinjection": count_sqlinjection_requests[0],
@@ -258,7 +262,7 @@ data = [
             "setupscript": count_setupscript_requests[0]
         },
         {
-            "package": "network",
+            "package": "<a href='/single_package?package=network'>network</a>",
             "leakingsecret": count_leakingsecret_network[0],
             "suspiciousfile": count_suspiciousfile_network[0],
             "sqlinjection": count_sqlinjection_network[0],
@@ -266,7 +270,7 @@ data = [
             "setupscript": count_setupscript_network[0]
         },
         {
-            "package": "pycurl",
+            "package": "<a href='/single_package?package=pycurl'>pycurl</a>",
             "leakingsecret": count_leakingsecret_pycurl[0],
             "suspiciousfile": count_suspiciousfile_pycurl[0],
             "sqlinjection": count_sqlinjection_pycurl[0],
@@ -274,7 +278,7 @@ data = [
             "setupscript": count_setupscript_pycurl[0]
         },
         {
-            "package": "pandas",
+            "package": "<a href='/single_package?package=pandas'>pandas</a>",
             "leakingsecret": count_leakingsecret_pandas[0],
             "suspiciousfile": count_suspiciousfile_pandas[0],
             "sqlinjection": count_sqlinjection_pandas[0],
@@ -282,7 +286,7 @@ data = [
             "setupscript": count_setupscript_pandas[0]
         },
         {
-            "package": "boto",
+            "package": "<a href='/single_package?package=boto'>boto</a>",
             "leakingsecret": count_leakingsecret_boto[0],
             "suspiciousfile": count_suspiciousfile_boto[0],
             "sqlinjection": count_sqlinjection_boto[0],
@@ -290,7 +294,7 @@ data = [
             "setupscript": count_setupscript_boto[0]
         },
         {
-            "package": "sqlint",
+            "package": "<a href='/single_package?package=sqlint'>sqlint</a>",
             "leakingsecret": count_leakingsecret_sqlint[0],
             "suspiciousfile": count_suspiciousfile_sqlint[0],
             "sqlinjection": count_sqlinjection_sqlint[0],
@@ -298,7 +302,7 @@ data = [
             "setupscript": count_setupscript_sqlint[0]
         },
         {
-            "package": "ssh-python",
+            "package": "<a href='/single_package?package=ssh-python'>ssh-python</a>",
             "leakingsecret": count_leakingsecret_sshpython[0],
             "suspiciousfile": count_suspiciousfile_sshpython[0],
             "sqlinjection": count_sqlinjection_sshpython[0],
@@ -306,7 +310,7 @@ data = [
             "setupscript": count_setupscript_sshpython[0]
         },
         {
-            "package": "sqlmap",
+            "package": "<a href='/single_package?package=sqlmap'>sqlmap</a>",
             "leakingsecret": count_leakingsecret_sqlmap[0],
             "suspiciousfile": count_suspiciousfile_sqlmap[0],
             "sqlinjection": count_sqlinjection_sqlmap[0],
@@ -314,7 +318,7 @@ data = [
             "setupscript": count_setupscript_sqlmap[0]
         },
         {
-            "package": "netlogger",
+            "package": "<a href='/single_package?package=netlogger'>netlogger</a>",
             "leakingsecret": count_leakingsecret_netlogger[0],
             "suspiciousfile": count_suspiciousfile_netlogger[0],
             "sqlinjection": count_sqlinjection_netlogger[0],
@@ -377,6 +381,329 @@ columns = [
 
 #jdata=json.dumps(data)
 
+
+@app.route('/')
+def home():
+    return render_template('./home.html')
+
+@app.route('/about/')
+def about():
+    return render_template('about.html')
+
+@app.route('/top_warnings/', methods=['GET', 'POST'])
+def top_warnings():
+    search = PackageSearch(request.form)
+    if request.method == 'POST':
+        return search_results(search)
+    return render_template("top_warnings.html",
+      data=data,
+      columns=columns,
+      title='Aura Borealis',
+      form=search)
+
+@app.route('/sum_warning_count/', methods=['GET', 'POST'])
+def sum_warning_count():
+    search = PackageSearch(request.form)
+    if request.method == 'POST':
+        return search_results(search)
+
+    # dummy data
+    columns = [
+      {
+        "field": "package", # which is the field's name of data key 
+        "title": "package", # display as the table header's name
+        "sortable": True,
+      },
+      {
+        "field": "total_warnings_count",
+        "title": "total number of warnings",
+        "sortable": True,
+      },
+      {
+        "field": "unique_warnings_count",
+        "title": "number of unique warnings",
+        "sortable": True,
+      },
+      {
+        "field": "severity_rating",
+        "title": "overall severity score",
+        "sortable": True,
+      }
+    ]
+
+    data = [
+            {"package": "<a href='/single_package?package=requests'>requests</a>","total_warnings_count": 23,"unique_warnings_count": 2, 'severity_rating':'neutral'},
+            {"package": "<a href='/single_package?package=network'>network</a>","total_warnings_count": 0,"unique_warnings_count": 0, 'severity_rating':'good'},
+            {"package": "<a href='/single_package?package=pycurl'>pycurl</a>","total_warnings_count": 0,"unique_warnings_count": 0, 'severity_rating':'good'},
+            {"package": "<a href='/single_package?package=pandas'>pandas</a>","total_warnings_count": 1,"unique_warnings_count": 1, 'severity_rating':'bad'},
+            {"package": "<a href='/single_package?package=boto'>boto</a>","total_warnings_count": 2,"unique_warnings_count": 1, 'severity_rating':'neutral'},
+            {"package": "<a href='/single_package?package=sqlint'>sqlint</a>","total_warnings_count": 20,"unique_warnings_count": 13, 'severity_rating':'neutral'},
+            {"package": "<a href='/single_package?package=ssh-python'>ssh-python</a>","total_warnings_count": 0,"unique_warnings_count": 0, 'severity_rating':'good'},
+            {"package": "<a href='/single_package?package=sqlmap'>sqlmap</a>","total_warnings_count": 11,"unique_warnings_count": 9, 'severity_rating':'bad'},
+            {"package": "<a href='/single_package?package=netlogger'>netlogger</a>","total_warnings_count": 0,"unique_warnings_count": 0, 'severity_rating':'neutral'},
+    ]
+
+    return render_template("sum_warning_count.html",
+      data=data,
+      columns=columns,
+      title='Aura Borealis',
+      form=search)
+
+@app.route('/diff_dates/', methods=['GET', 'POST'])
+def diff_dates():
+    search = PackageSearch(request.form)
+    if request.method == 'POST':
+        return search_results(search)
+
+    # dummy data
+    columns = [
+      {
+        "field": "package", # which is the field's name of data key 
+        "title": "package", # display as the table header's name
+        "sortable": True,
+      },
+      {
+        "field": "num_changes",
+        "title": "total number of warnings changed",
+        "sortable": True,
+      },
+     {
+        "field": "num_changes_unique",
+        "title": "number of unique warnings changed",
+        "sortable": True,
+      },
+      {
+        "field": "changes_score",
+        "title": "change in overall severity score",
+        "sortable": True,
+      },
+    ]
+
+    data = [
+            {"package": "<a href='/single_package?package=requests'>requests</a>","num_changes": 3,"num_changes_unique": 2, 'changes_score':'- bad'},
+            {"package": "<a href='/single_package?package=network'>network</a>","num_changes": 0,"num_changes_unique": 0, 'changes_score':'none'},
+            {"package": "<a href='/single_package?package=pycurl'>pycurl</a>","num_changes": 1,"num_changes_unique": 1, 'changes_score':'none'},
+            {"package": "<a href='/single_package?package=pandas'>pandas</a>","num_changes": 1,"num_changes_unique": 1, 'changes_score':'+ good'},
+            {"package": "<a href='/single_package?package=boto'>boto</a>","num_changes": 2,"num_changes_unique": 1, 'changes_score':'+ neutral'},
+            {"package": "<a href='/single_package?package=sqlint'>sqlint</a>","num_changes": 20,"num_changes_unique": 1, 'changes_score':'none'},
+            {"package": "<a href='/single_package?package=ssh-python'>ssh-python</a>","num_changes": 0,"num_changes_unique": 0, 'changes_score':'none'},
+            {"package": "<a href='/single_package?package=sqlmap'>sqlmap</a>","num_changes": 11,"num_changes_unique": 9, 'changes_score':'- neutral'},
+            {"package": "<a href='/single_package?package=netlogger'>netlogger</a>","num_changes": 0,"num_changes_unique": 0, 'changes_score':'none'},
+    ]
+    return render_template("diff_dates.html",
+      data=data,
+      columns=columns,
+      title='Aura Borealis',
+      form=search)
+
+@app.route('/side_by_side/', methods=['GET', 'POST'])
+def side_by_side():
+    search = PackageSearch(request.form)
+    if request.method == 'POST':
+        return search_results(search)
+
+    # dummy data
+    columns = [
+      {
+        "field": "package1", # which is the field's name of data key 
+        "title": "<a href='/single_package?package=boto'>boto</a>", # display as the table header's name
+        "sortable": True,
+      },
+      {
+        "field": "package2",
+        "title": "<a href='/single_package?package=requests'>requests</a>",
+        "sortable": True,
+      },
+     {
+        "field": "warning_type",
+        "title": "warning type",
+        "sortable": True,
+      },
+    ]
+
+    data = [
+            {"package1": 'good',"package2": 'neutral',"warning_type": "OVERALL SEVERITY"},
+            {"package1": 0,"package2": 1,"warning_type": "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#leakingsecret'>LeakingSecret</a>"},
+            {"package1": 0,"package2": 0,"warning_type": "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#functioncall'>FunctionCall</a>"},
+            {"package1": 1,"package2": 1,"warning_type": "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#moduleimport'>ModuleImport</a>"},
+            {"package1": 0,"package2": 13,"warning_type": "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#base64blob'>Base64Blob</a>"},
+            {"package1": 0,"package2": 0,"warning_type": "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#binwalk'>Binwalk</a>"},
+            {"package1": 0,"package2": 0,"warning_type": "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#cryptokeygeneration'>CryptoKeyGeneration</a>"},
+            {"package1": 0,"package2": 0,"warning_type": "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#dataprocessing'>DataProcessing</a>"},
+            {"package1": 0,"package2": 0,"warning_type": "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#detection'>Detection</a>"},
+            {"package1": 1,"package2": 2,"warning_type": "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#invalidrequirement'>InvalidRequirement</a>"},
+            {"package1": 0,"package2": 0,"warning_type": "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#malformedxml'>MalformedXML</a>"},
+            {"package1": 0,"package2": 0,"warning_type": "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#archiveanomaly'>ArchiveAnomaly</a>"},
+            {"package1": 0,"package2": 0,"warning_type": "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#suspiciousarchiveentry'>SuspiciousArchiveEntry</a>"},
+            {"package1": 0,"package2": 1,"warning_type": "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#outdatedpackage'>OutdatedPackage</a>"},
+            {"package1": 0,"package2": 1,"warning_type": "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#suspiciousfile'>SuspiciousFile</a>"},
+            {"package1": 0,"package2": 1,"warning_type": "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#unpinnedpackage'>UnpinnedPackage</a>"},
+            {"package1": 0,"package2": 0,"warning_type": "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#sqlinjection'>SQLInjection</a>"},
+            {"package1": 0,"package2": 0,"warning_type": "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#taintanomaly'>TaintAnomaly</a>"},
+            {"package1": 0,"package2": 1,"warning_type": "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#sensitivefile'>SensitiveFile</a>"},
+            {"package1": 0,"package2": 0,"warning_type": "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#setupscript'>SetupScript</a>"},
+            {"package1": 0,"package2": 1,"warning_type": "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#wheel'>Wheel</a>"},
+            {"package1": 0,"package2": 5,"warning_type": "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#stringmatch'>StringMatch</a>"},
+            {"package1": 1,"package2": 1,"warning_type": "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#file-stats'>File stats</a>"},
+            {"package1": 0,"package2": 0,"warning_type": "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#yaramatch'>YaraMatch</a>"},
+            {"package1": 0,"package2": 0,"warning_type": "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#yaraerror'>YaraError</a>"},
+            {"package1": 0,"package2": 0,"warning_type": "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#astanalysiserror'>ASTAnalysisError</a>"},
+            {"package1": 0,"package2": 0,"warning_type": "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#astparseerror'>ASTParseError</a>"},
+            {"package1": 0,"package2": 0,"warning_type": "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#misc'>Misc</a>"},
+
+
+    ]
+
+    return render_template("side_by_side.html",
+      data=data,
+      columns=columns,
+      title='Aura Borealis',
+      form=search)
+
+@app.route('/single_package/', methods=['GET', 'POST'])
+def single_package():
+    search = PackageSearch(request.form)
+    if request.method == 'POST':
+        return search_results(search)
+
+    package = request.args.get('package')
+    print(package)
+    # dummy data
+    columns = [
+     {
+        "field": "warning_type",
+        "title": "warning type",
+        "sortable": True,
+      },
+      {
+        "field": "critical", # which is the field's name of data key 
+        "title": "critical", # display as the table header's name
+        "sortable": True,
+      },
+      {
+        "field": "severe",
+        "title": "severe",
+        "sortable": True,
+      },
+      {
+        "field": "moderate", # which is the field's name of data key 
+        "title": "moderate", # display as the table header's name
+        "sortable": True,
+      },
+      {
+        "field": "low",
+        "title": "low",
+        "sortable": True,
+      },
+      {
+        "field": "unknown",
+        "title": "unknown",
+        "sortable": True,
+      },
+    ]
+
+    data = [
+            {"unknown": 0,"low": 0,"moderate": 1,"severe": 0,"critical": 5,"warning_type": "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#leakingsecret'>LeakingSecret</a>"},
+            {"unknown": 0,"low": 0,"moderate": 0,"severe": 0,"critical": 0,"warning_type": "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#functioncall'>FunctionCall</a>"},
+            {"unknown": 0,"low": 0,"moderate": 0,"severe": 0,"critical": 0,"warning_type": "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#moduleimport'>ModuleImport</a>"},
+            {"unknown": 1,"low": 0,"moderate": 0,"severe": 0,"critical": 0,"warning_type": "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#base64blob'>Base64Blob</a>"},
+            {"unknown": 1,"low": 0,"moderate": 0,"severe": 0,"critical": 0,"warning_type": "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#binwalk'>Binwalk</a>"},
+            {"unknown": 0,"low": 0,"moderate": 0,"severe": 0,"critical": 0,"warning_type": "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#cryptokeygeneration'>CryptoKeyGeneration</a>"},
+            {"unknown": 1,"low": 0,"moderate": 0,"severe": 0,"critical": 0,"warning_type": "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#dataprocessing'>DataProcessing</a>"},
+            {"unknown": 0,"low": 0,"moderate": 0,"severe": 0,"critical": 0,"warning_type": "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#detection'>Detection</a>"},
+            {"unknown": 0,"low": 1,"moderate": 3,"severe": 0,"critical": 0,"warning_type": "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#invalidrequirement'>InvalidRequirement</a>"},
+            {"unknown": 0,"low": 0,"moderate": 0,"severe": 1,"critical": 2,"warning_type": "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#malformedxml'>MalformedXML</a>"},
+            {"unknown": 0,"low": 0,"moderate": 0,"severe": 0,"critical": 0,"warning_type": "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#archiveanomaly'>ArchiveAnomaly</a>"},
+            {"unknown": 0,"low": 0,"moderate": 0,"severe": 0,"critical": 0,"warning_type": "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#suspiciousarchiveentry'>SuspiciousArchiveEntry</a>"},
+            {"unknown": 0,"low": 0,"moderate": 0,"severe": 0,"critical": 0,"warning_type": "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#outdatedpackage'>OutdatedPackage</a>"},
+            {"unknown": 0,"low": 0,"moderate": 0,"severe": 2,"critical": 0,"warning_type": "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#suspiciousfile'>SuspiciousFile</a>"},
+            {"unknown": 11,"low": 0,"moderate": 0,"severe": 0,"critical": 0,"warning_type": "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#unpinnedpackage'>UnpinnedPackage</a>"},
+            {"unknown": 0,"low": 0,"moderate": 0,"severe": 0,"critical": 0,"warning_type": "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#sqlinjection'>SQLInjection</a>"},
+            {"unknown": 0,"low": 2,"moderate": 2,"severe": 0,"critical": 0,"warning_type": "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#taintanomaly'>TaintAnomaly</a>"},
+            {"unknown": 0,"low": 0,"moderate": 0,"severe": 0,"critical": 0,"warning_type": "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#sensitivefile'>SensitiveFile</a>"},
+            {"unknown": 0,"low": 0,"moderate": 0,"severe": 0,"critical": 0,"warning_type": "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#setupscript'>SetupScript</a>"},
+            {"unknown": 3,"low": 0,"moderate": 0,"severe": 0,"critical": 0,"warning_type": "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#wheel'>Wheel</a>"},
+            {"unknown": 0,"low": 0,"moderate": 0,"severe": 0,"critical": 0,"warning_type": "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#stringmatch'>StringMatch</a>"},
+            {"unknown": 0,"low": 5,"moderate": 0,"severe": 0,"critical": 3,"warning_type": "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#file-stats'>File stats</a>"},
+            {"unknown": 0,"low": 0,"moderate": 0,"severe": 2,"critical": 1,"warning_type": "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#yaramatch'>YaraMatch</a>"},
+            {"unknown": 0,"low": 0,"moderate": 1,"severe": 1,"critical": 1,"warning_type": "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#yaraerror'>YaraError</a>"},
+            {"unknown": 0,"low": 0,"moderate": 0,"severe": 0,"critical": 0,"warning_type": "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#astanalysiserror'>ASTAnalysisError</a>"},
+            {"unknown": 2,"low": 0,"moderate": 0,"severe": 0,"critical": 0,"warning_type": "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#astparseerror'>ASTParseError</a>"},
+            {"unknown": 0,"low": 0,"moderate": 0,"severe": 0,"critical": 0,"warning_type": "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#misc'>Misc</a>"},
+
+
+    ]
+    return render_template("single_package.html",
+      data=data,
+      columns=columns,
+      title='Aura Borealis',
+      form=search,
+      package=package)
+
+@app.route('/compare_average/', methods=['GET', 'POST'])
+def compare_average():
+    search = PackageSearch(request.form)
+    if request.method == 'POST':
+        return search_results(search)
+    # dummy data
+    columns = [
+      {
+        "field": "package1", # which is the field's name of data key 
+        "title": "<a href='/single_package?package=pandas'>pandas</a>", # display as the table header's name
+        "sortable": True,
+      },
+      {
+        "field": "package2",
+        "title": "average <i>DATA ANALYSIS</i> package profile",
+        "sortable": True,
+      },
+     {
+        "field": "warning_type",
+        "title": "warning type",
+        "sortable": True,
+      },
+    ]
+
+    data = [
+            {"package1": 'good',"package2": 'neutral',"warning_type": "OVERALL SEVERITY"},
+            {"package1": 0,"package2": 1,"warning_type": "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#leakingsecret'>LeakingSecret</a>"},
+            {"package1": 0,"package2": 0,"warning_type": "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#functioncall'>FunctionCall</a>"},
+            {"package1": 1,"package2": 1,"warning_type": "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#moduleimport'>ModuleImport</a>"},
+            {"package1": 0,"package2": 13,"warning_type": "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#base64blob'>Base64Blob</a>"},
+            {"package1": 0,"package2": 0,"warning_type": "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#binwalk'>Binwalk</a>"},
+            {"package1": 0,"package2": 0,"warning_type": "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#cryptokeygeneration'>CryptoKeyGeneration</a>"},
+            {"package1": 0,"package2": 0,"warning_type": "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#dataprocessing'>DataProcessing</a>"},
+            {"package1": 0,"package2": 0,"warning_type": "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#detection'>Detection</a>"},
+            {"package1": 1,"package2": 2,"warning_type": "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#invalidrequirement'>InvalidRequirement</a>"},
+            {"package1": 0,"package2": 0,"warning_type": "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#malformedxml'>MalformedXML</a>"},
+            {"package1": 0,"package2": 0,"warning_type": "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#archiveanomaly'>ArchiveAnomaly</a>"},
+            {"package1": 0,"package2": 0,"warning_type": "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#suspiciousarchiveentry'>SuspiciousArchiveEntry</a>"},
+            {"package1": 0,"package2": 1,"warning_type": "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#outdatedpackage'>OutdatedPackage</a>"},
+            {"package1": 0,"package2": 1,"warning_type": "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#suspiciousfile'>SuspiciousFile</a>"},
+            {"package1": 0,"package2": 1,"warning_type": "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#unpinnedpackage'>UnpinnedPackage</a>"},
+            {"package1": 0,"package2": 0,"warning_type": "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#sqlinjection'>SQLInjection</a>"},
+            {"package1": 0,"package2": 0,"warning_type": "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#taintanomaly'>TaintAnomaly</a>"},
+            {"package1": 0,"package2": 1,"warning_type": "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#sensitivefile'>SensitiveFile</a>"},
+            {"package1": 0,"package2": 0,"warning_type": "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#setupscript'>SetupScript</a>"},
+            {"package1": 0,"package2": 1,"warning_type": "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#wheel'>Wheel</a>"},
+            {"package1": 0,"package2": 5,"warning_type": "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#stringmatch'>StringMatch</a>"},
+            {"package1": 1,"package2": 1,"warning_type": "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#file-stats'>File stats</a>"},
+            {"package1": 0,"package2": 0,"warning_type": "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#yaramatch'>YaraMatch</a>"},
+            {"package1": 0,"package2": 0,"warning_type": "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#yaraerror'>YaraError</a>"},
+            {"package1": 0,"package2": 0,"warning_type": "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#astanalysiserror'>ASTAnalysisError</a>"},
+            {"package1": 0,"package2": 0,"warning_type": "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#astparseerror'>ASTParseError</a>"},
+            {"package1": 0,"package2": 0,"warning_type": "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#misc'>Misc</a>"},
+    ]
+
+    return render_template("compare_average.html",
+      data=data,
+      columns=columns,
+      title='Aura Borealis',
+      form=search)
+
+
+
+"""
 @app.route('/', methods=['GET', 'POST'])
 def index():
     search = PackageSearch(request.form)
@@ -421,7 +748,7 @@ def search():
         return render_template('table.html', data=data)
     return render_template('table.html')
 '''
-
+"""
 if __name__ == '__main__':
 	#print jdata
   app.run(host='0.0.0.0', debug=True)
