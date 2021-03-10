@@ -245,6 +245,87 @@ curs.execute(
     "select count(*) from aura_detections where package='netlogger' and type='SetupScript'"
 )
 count_setupscript_netlogger = [row for row in curs]
+
+# streamlit
+
+curs.execute(
+    "select count(*) from aura_detections where package='streamlit' and type='LeakingSecret'"
+)
+count_leakingsecret_streamlit = [row for row in curs]
+
+curs.execute(
+    "select count(*) from aura_detections where package='streamlit' and type='SuspiciousFile'"
+)
+count_suspiciousfile_streamlit = [row for row in curs]
+
+curs.execute(
+    "select count(*) from aura_detections where package='streamlit' and type='SQLInjection'"
+)
+count_sqlinjection_streamlit = [row for row in curs]
+
+curs.execute(
+    "select count(*) from aura_detections where package='streamlit' and type='SensitiveFile'"
+)
+count_sensitivefile_streamlit = [row for row in curs]
+
+curs.execute(
+    "select count(*) from aura_detections where package='streamlit' and type='SetupScript'"
+)
+count_setupscript_streamlit = [row for row in curs]
+
+# pillow
+
+curs.execute(
+    "select count(*) from aura_detections where package='pillow' and type='LeakingSecret'"
+)
+count_leakingsecret_pillow = [row for row in curs]
+
+curs.execute(
+    "select count(*) from aura_detections where package='pillow' and type='SuspiciousFile'"
+)
+count_suspiciousfile_pillow = [row for row in curs]
+
+curs.execute(
+    "select count(*) from aura_detections where package='pillow' and type='SQLInjection'"
+)
+count_sqlinjection_pillow = [row for row in curs]
+
+curs.execute(
+    "select count(*) from aura_detections where package='pillow' and type='SensitiveFile'"
+)
+count_sensitivefile_pillow = [row for row in curs]
+
+curs.execute(
+    "select count(*) from aura_detections where package='pillow' and type='SetupScript'"
+)
+count_setupscript_pillow = [row for row in curs]
+
+# huggingface
+
+curs.execute(
+    "select count(*) from aura_detections where package='huggingface' and type='LeakingSecret'"
+)
+count_leakingsecret_huggingface = [row for row in curs]
+
+curs.execute(
+    "select count(*) from aura_detections where package='huggingface' and type='SuspiciousFile'"
+)
+count_suspiciousfile_huggingface = [row for row in curs]
+
+curs.execute(
+    "select count(*) from aura_detections where package='huggingface' and type='SQLInjection'"
+)
+count_sqlinjection_huggingface = [row for row in curs]
+
+curs.execute(
+    "select count(*) from aura_detections where package='huggingface' and type='SensitiveFile'"
+)
+count_sensitivefile_huggingface = [row for row in curs]
+
+curs.execute(
+    "select count(*) from aura_detections where package='huggingface' and type='SetupScript'"
+)
+count_setupscript_huggingface = [row for row in curs]
 """
 A example for creating a Table that is sortable by its header
 """
@@ -253,6 +334,30 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = SECRET_KEY
 datepicker(app)
 data = [
+        {
+            "package": "<a href='/single_package?package=streamlit'>streamlit</a>",
+            "leakingsecret": count_leakingsecret_streamlit[0],
+            "suspiciousfile": count_suspiciousfile_streamlit[0],
+            "sqlinjection": count_sqlinjection_streamlit[0],
+            "sensitivefile": count_sensitivefile_streamlit[0],
+            "setupscript": count_setupscript_streamlit[0]
+        },
+        {
+            "package": "<a href='/single_package?package=pillow'>pillow</a>",
+            "leakingsecret": count_leakingsecret_pillow[0],
+            "suspiciousfile": count_suspiciousfile_pillow[0],
+            "sqlinjection": count_sqlinjection_pillow[0],
+            "sensitivefile": count_sensitivefile_pillow[0],
+            "setupscript": count_setupscript_pillow[0]
+        },
+        {
+            "package": "<a href='/single_package?package=huggingface'>huggingface</a>",
+            "leakingsecret": count_leakingsecret_huggingface[0],
+            "suspiciousfile": count_suspiciousfile_huggingface[0],
+            "sqlinjection": count_sqlinjection_huggingface[0],
+            "sensitivefile": count_sensitivefile_huggingface[0],
+            "setupscript": count_setupscript_huggingface[0]
+        },
         {
             "package": "<a href='/single_package?package=requests'>requests</a>",
             "leakingsecret": count_leakingsecret_requests[0],
