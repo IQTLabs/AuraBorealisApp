@@ -771,7 +771,7 @@ def getLOCDummyData(package, warning_type, critical=None):
         for warning in dummyJSONs[package]:
             if warning['type'].lower() == warning_type:
                 if critical == None or critical == warning['severity']:
-                    results.append([warning['line_no'], warning["line"]])
+                    results.append([warning['line_no'], warning["location"], warning["line"]])
     return results
 
 
@@ -894,12 +894,17 @@ def loc():
         "title": "source code", # display as the table header's name
         "sortable": True,
       },
+      {
+        "field": "filename", # which is the field's name of data key 
+        "title": "filename", # display as the table header's name
+        "sortable": True,
+      },
     ]
 
     # dummy data
     data = []
     for loc in LOCs:
-        data.append({'line':loc[0], 'code':loc[1]})
+        data.append({'line':loc[0], 'code':loc[2], 'filename':loc[1]})
 
     return render_template("loc.html",
       data=data,
