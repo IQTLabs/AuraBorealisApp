@@ -35,3 +35,6 @@ Navigate to the URL in your browser that it shows: `http://0.0.0.0:5000/`
 jmeyers@iqt.org
 
 ## Related Work
+
+* Our blog post on [secure code reuse](https://www.iqt.org/toward-secure-code-reuse/)
+* Our blog post on [typosquatting](https://www.iqt.org/bewear-python-typosquatting-is-about-more-than-typos/) and [preventing typosquatting via pypi-scan](https://www.iqt.org/pypi-scan/)
