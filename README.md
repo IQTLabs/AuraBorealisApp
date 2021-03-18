@@ -1,8 +1,12 @@
-# AuraBorealis: 
+# AuraBorealis: Do You Know What's In Your Python Packages?
 
 ## About
 
-AuraBorealis is a Flask-based webapp for visualizing security vulnerability warnings and information for Python packages. It is a front-end wrapper around data collected from scanning the Python package registry via [Aura](https://github.com/SourceCode-AI/aura). The current tool is a proof-of-concept, and includes some live Aura data, as well as some mockup data for demo purposes.
+AuraBorealis is a web application for visualizing anomalous and potentially malicious code in Python package registries. It
+uses security audit data produced by scanning the Python Package Index (PyPI) via [Aura](https://github.com/SourceCode-AI/aura), a
+static analysis designed for large scale security auditing of Python packages
+.
+The current tool is a proof-of-concept, and includes some live Aura data, as well as some mockup data for demo purposes.
 
 Current features include:
 
@@ -32,9 +36,11 @@ Navigate to the URL in your browser that it shows: `http://0.0.0.0:5000/`
 
 ## Contact Information
 
-jmeyers@iqt.org
+jmeyers@iqt.org (John Speed Meyers, Secure Code Reuse project lead). The lead developer and creator of Aura is Martin Carnogusky of [sourcecode.ai](https://aura.sourcecode.ai/).
 
 ## Related Work
 
-* Our blog post on [secure code reuse](https://www.iqt.org/toward-secure-code-reuse/)
-* Our blog post on [typosquatting](https://www.iqt.org/bewear-python-typosquatting-is-about-more-than-typos/) and [preventing typosquatting via pypi-scan](https://www.iqt.org/pypi-scan/)
+* IQT blog post on [secure code reuse](https://www.iqt.org/toward-secure-code-reuse/)
+* IQT blog posts on [typosquatting](https://www.iqt.org/bewear-python-typosquatting-is-about-more-than-typos/) and [preventing typosquatting via pypi-scan](https://www.iqt.org/pypi-scan/)
+* USENIX article on ["Counting Broken Links: A Quant's View of Software Supply Chain Security"](https://www.usenix.org/system/files/login/articles/login_winter20_17_geer.pdf)
+* IQT open source [dataset](https://github.com/IQTLabs/software-supply-chain-compromises) on known software supply chain compromises
