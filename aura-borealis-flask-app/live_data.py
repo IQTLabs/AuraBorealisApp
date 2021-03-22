@@ -1,10 +1,11 @@
 """
 This file loads live Aura data
 """
-
+from elasticsearch import Elasticsearch
 from es.elastic.api import connect
 HOST = '192.168.68.9'
 
+es = Elasticsearch(host=HOST)
 
 def get_warnings(package, warning_types, curs):
 	"""
@@ -50,3 +51,47 @@ def connect_and_load(packages, warning_types):
 		warnings[package] = get_warnings(package, warning_types, curs)
 
 	return warnings
+
+def iterate_distinct_field(es, fieldname, pagesize=250, **kwargs):
+    """
+    Helper to get all distinct values from ElasticSearch
+    (ordered by number of occurrences)
+    """
+    compositeQuery = {
+        "size": pagesize,
+        "sources": [{
+                fieldname: {
+                    "terms": {
+                        "field": fieldname
+                    }
+                }
+            }
+        ]
+    }
+    # Iterate over pages
+    while True:
+        result = es.search(**kwargs, body={
+            "aggs": {
+                "values": {
+                    "composite": compositeQuery
+                }
+            }
+        })
+        # Yield each bucket
+        for aggregation in result["aggregations"]["values"]["buckets"]:
+            yield aggregation
+        # Set "after" field
+        if "after_key" in result["aggregations"]["values"]:
+            compositeQuery["after"] = \
+                result["aggregations"]["values"]["after_key"]
+        else: # Finished!
+            break
+
+def get_unique_warnings():
+    res = iterate_distinct_field(es, fieldname="severity.keyword", index="aura_detections")
+    for result in res:
+        print(result)
+    return res
+
+if __name__ == '__main__':
+    get_unique_warnings()
