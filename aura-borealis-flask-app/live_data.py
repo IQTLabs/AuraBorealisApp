@@ -5,48 +5,177 @@ This file loads live Aura data
 from es.elastic.api import connect
 HOST = '192.168.68.9'
 
+DEBUG = " limit 100"
 
-def get_warnings(package, warning_types, curs):
+
+def get_warnings_by_package(package, warning, severity, package_warnings):
 	"""
-	get all the warning for a specific package
+	get all the warnings for a specific package
 
 	Arguments
 	---------
-	package : the package you want warnings for (do not specify a version)
-	warning_types : the Aura warning types you care about
-	curs : the cursor to the opened connection to the database
-
-	Returns
-	---------
-	warnings : a dict of warnings, by warning type, for this package
-	"""
-	count_warnings = {}
-	for warning in warning_types:
-		curs.execute(
-		    "select count(*) from aura_detections where package='" + package + "' and type='" + warning + "'"
-		)
-		count_warnings[warning.lower()] = [row for row in curs]
-	return count_warnings
-
-
-def connect_and_load(packages, warning_types):
-	"""
-	loads all the warnings for the specified packages
-
-	Arguments
-	---------
-	packages : the list package you want warnings for (do not specify versions)
-	warning_types : the Aura warning types you care about
-
-	Returns
-	---------
-	warnings : a dict of warnings, by package name
+	package : the package you want warnings for (do not specify a version for now)
+	warning : the Aura warning types you care about
+	severity : the severity level you care about
+	package_warnings : the dict this function will update
 	"""
 	conn = connect(host=HOST)
 	curs = conn.cursor()
 
-	warnings = {}
-	for package in packages:
-		warnings[package] = get_warnings(package, warning_types, curs)
+	count_warnings = {}
+	curs.execute(
+			    "select count(*) from aura_detections where package='" + package + "' and type='" + warning + "' and severity='" + severity + "'"
+		)
+	for row in curs:
+		if warning not in package_warnings.keys():
+			package_warnings[warning] = {}
+		package_warnings[warning][severity] = row[0]
 
-	return warnings
+
+def get_LOC_by_warning(package, warning, severity):
+	"""
+	get all the LOC for a specific package and warning and severity
+
+	Arguments
+	---------
+	package : the package you want warnings for (do not specify a version)
+	warning : the Aura warning types you care about
+	severity : the severity level you care about.
+
+	Returns
+	---------
+	warnings : a list of lines of code tuples
+	"""
+	conn = connect(host=HOST)
+	curs = conn.cursor()
+
+	print("select line, line_no, location from aura_detections where package='" + package + "' and type='" + warning + "' and severity='" + severity + "'")
+	curs.execute(
+			    "select line, line_no, location from aura_detections where package='" + package + "' and type='" + warning + "' and severity='" + severity + "'"
+		)
+	results = []
+	for row in curs:
+		print("in ruc")
+		print(row[0])
+		results.append([row[0], row[1], row[2]])
+	return results
+
+# http://192.168.68.9:5601/app/kibana#/discover?_g=(filters:!(),refreshInterval:(pause:!t,value:0),time:(from:now-1y,to:now))&_a=(columns:!(_source),filters:!(),index:'30bc7830-7530-11eb-870c-ad2473be90c7',interval:auto,query:(language:kuery,query:''),sort:!())
+def get_all_warnings(warning_type, all_warnings):
+	"""
+	get all the warnings for a warning_type across all packages
+
+	Arguments
+	---------
+	warning_type : the Aura warning type you care about
+	all_warnings : a dictionary of all warnings, grouped by package, to be modified by this function
+	"""
+
+	conn = connect(host=HOST)
+	curs = conn.cursor()
+
+	curs.execute(
+		"select package, type, severity, score, line, line_no from aura_detections where type='" + warning_type + "'" + DEBUG
+	)
+	for row in curs:
+		package = row[0]
+		warning_type = row[1]
+		severity = row[2] 
+		score = row[3]
+		line = row[4]
+		line_no = row[5]
+
+		if package not in all_warnings.keys():
+			all_warnings[package] = []
+		all_warnings[package].append({'warning_type':warning_type, 'severity':severity, 'score':score, 'line':line, 'line_no':line_no})
+
+def get_package_score(package):
+	"""
+	gets the severity score for a package
+
+	Arguments
+	---------
+	package : the package you care about
+
+	Returns
+	---------
+	score : a positive integer, the sum of all the severitiy scores of all warnings for this package
+	"""
+
+	conn = connect(host=HOST)
+	curs = conn.cursor()
+
+	curs.execute(
+		"select score from aura_detections where package='" + package + "'" + DEBUG
+	)
+
+	score = 0
+	for row in curs:
+		score += int(row[0])
+	return score
+
+def get_all_warnings_counts(warning_type, all_warnings, all_unique_warnings, all_severities):
+	"""
+	get all the warnings for a warning_type
+
+	Arguments
+	---------
+	warning_type : the Aura warning type you care about
+	all_warnings : a dictionary of all warnings, grouped by package, to be updated
+	all_unique_warnings : a dictionary of all unique warnings, grouped by package, to be updated
+	all_severities :  dictionary of severity scores, grouped by package, to be updated
+	"""
+
+	conn = connect(host=HOST)
+	curs = conn.cursor()
+
+	curs.execute(
+		"select package, type, severity, score from aura_detections where type='" + warning_type + "'" + DEBUG
+	)
+
+	for row in curs:
+		package = row[0]
+		warning_type = row[1]
+		severity = row[2] 
+		score = row[3]
+
+		# update the dictionary that counts the total number of warnings (including duplicates)
+		if package not in all_warnings.keys():
+			all_warnings[package] = 0
+		all_warnings[package] += 1
+
+		if package not in all_unique_warnings.keys():
+			all_unique_warnings[package] = {}
+		if warning_type not in all_unique_warnings[package].keys():
+			all_unique_warnings[package][warning_type] = 1
+
+		if package not in all_severities.keys():
+			all_severities[package] = 0
+		all_severities[package] += int(score)
+
+
+def connect_and_load_default(warning_types):
+	"""
+	loads all the packages for the specified warning_type
+
+	Arguments
+	---------
+	warning_types : the Aura warning types you care about
+
+	Returns
+	---------
+	warnings : a dict of lists of warnings, by package name
+	"""
+
+	all_warnings = {}
+	for warning in warning_types:
+		get_all_warnings(warning, all_warnings)
+	return all_warnings
+
+
+
+
+
+
+
+

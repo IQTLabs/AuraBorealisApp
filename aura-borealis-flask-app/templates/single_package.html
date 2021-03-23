@@ -4,7 +4,7 @@
 <head>
   <meta http-equiv="content-type" content="text/html; charset=UTF-8">
   <meta name="robots" content="noindex">
-  <title>Bootstrap Table - Flask example </title>
+  <title>View all warnings for a single package </title>
   <script
   src="https://code.jquery.com/jquery-2.2.4.min.js"
   integrity="sha256-BbhdlvQf/xTY9gja0Dq3HiwQF8LaCRTXxZKRutelT44="
@@ -25,9 +25,8 @@
   <link rel="stylesheet" href="/static/index.css">
   <script type='text/javascript'>
     var pack = {{package|tojson}};
-    if (pack == null){
-      pack = 'pandas [default]';
-    }
+    var score = {{score|tojson}};
+
     $(window).load(function(){
       var data = {{data|tojson}};
       var columns = {{columns|tojson}};
@@ -46,13 +45,13 @@
 <body>
   <div class="container" style="padding: 10px; ">
         <img src="/static/logo.png">
-        <h3 class="logo">View all warnings for a single package [dummy data]</h1>
+        <h3 class="logo">View all warnings for a single package</h1>
         <a href="/">back to menu</a>
     <br/>
     <br/>
     <br/>
     <h4>Package: <b><script>document.write(pack);</script><b></h4>
-    <h4>Overall severity score: <i>neutral</i></h4>
+    <h4>Overall severity score: <i><script>document.write(score);</script></i></h4>
     <div id="toolbar"></div>
     <table
       id="table"
