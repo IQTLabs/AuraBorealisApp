@@ -21,7 +21,6 @@ def get_warnings_by_package(package, warning, severity, package_warnings):
 	conn = connect(host=HOST)
 	curs = conn.cursor()
 
-	count_warnings = {}
 	curs.execute(
 			    "select count(*) from aura_detections where package='" + package + "' and type='" + warning + "' and severity='" + severity + "'"
 		)

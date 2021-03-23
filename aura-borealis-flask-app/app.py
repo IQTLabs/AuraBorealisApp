@@ -239,7 +239,12 @@ def loc():
     warning = request.args.get('warning')
     severity = request.args.get('severity')
 
-    LOCs = get_LOC_by_warning(package, warning, severity)
+    if severity == 'ALL':
+        LOCs = []
+        for severity in SEVERITIES:
+            LOCs += get_LOC_by_warning(package, warning, severity)
+    else:
+        LOCs = get_LOC_by_warning(package, warning, severity)
 
     columns = [
       {
@@ -286,8 +291,34 @@ def comparison():
         package2 = request.args.get('package2')
 
     if package1 == None:
-        package1 = "boto__1_0"
-        package2 = "requests__2_3"
+        package1 = "boto"
+        package2 = "requests"
+
+    score1 = get_package_score(package1)
+    score2 = get_package_score(package2)
+
+    data = []
+    data.append({"package1": score1,"package2": score2,"warning_type": "OVERALL SEVERITY"})
+
+    package1_warnings = {}
+    package2_warnings = {}
+    for warning_type in WARNING_TYPES:
+        for severity in SEVERITIES:
+            get_warnings_by_package(package1, warning_type, severity, package1_warnings)
+            get_warnings_by_package(package2, warning_type, severity, package2_warnings)
+
+
+    for warning_type in WARNING_TYPES:
+        p1_sum = 0
+        p2_sum = 0
+        for severity in SEVERITIES:
+            p1_sum += package1_warnings[warning_type][severity]
+            p2_sum += package2_warnings[warning_type][severity]
+        if p1_sum != 0:
+            p1_sum = '<a href="/loc?package=' + package1 + '&warning=' + warning_type + '&severity=ALL">' + str(p1_sum) + '</a>'
+        if p2_sum != 0:
+            p2_sum = '<a href="/loc?package=' + package2 + '&warning=' + warning_type + '&severity=ALL">' + str(p2_sum) + '</a>'        
+        data.append({"package1": p1_sum,"package2": p2_sum,"warning_type": "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#" + warning_type.lower() + "'>" + warning_type + "</a>"})
 
     columns = [
       {
@@ -306,8 +337,6 @@ def comparison():
         "sortable": True,
       },
     ]
-
-    data = getComparisonDummyData([package1, package2])
 
     return render_template("comparison.html",
       data=data,
