@@ -113,14 +113,14 @@ def top_warnings():
 		entry = {}
 		entry['package'] = "<a href='/single_package?package=" + package +"'>" + package +"</a>"
 		warning_counts = {}
-		for warning in dict_packages[package]:  # go through a list of all the warnings for a package
+		for warning in dict_packages[package]:	# go through a list of all the warnings for a package
 			if warning['warning_type'] not in warning_counts.keys():
-			  warning_counts[warning['warning_type']] = 1
+				warning_counts[warning['warning_type']] = 1
 			else:
-			  warning_counts[warning['warning_type']] += 1
+				warning_counts[warning['warning_type']] += 1
 		#print('warning_counts', warning_counts)
 		for warning_type in warning_types_selected:
-		  if warning_type in warning_counts.keys():
+			if warning_type in warning_counts.keys():
 				entry[warning_type.lower()] = warning_counts[warning_type]
 			else:
 				entry[warning_type.lower()] = 0
@@ -134,9 +134,9 @@ def top_warnings():
 		columns.append({"field": warning.lower(), "title": warning, "sortable": True,})
 
 	return render_template("top_warnings.html",
-	  data=data,
-	  columns=columns,
-	  title='Aura Borealis')
+		data=data,
+		columns=columns,
+		title='Aura Borealis')
 
 # display all the packages by their overall severity scores, total warnings, and total unique warnings
 @app.route('/sum_warning_count/', methods=['GET', 'POST'])
@@ -155,26 +155,26 @@ def sum_warning_count():
 		all_unique_warnings_summed[package] = count
 
 	columns = [
-	  {
+		{
 		"field": "package", # which is the field's name of data key 
 		"title": "package", # display as the table header's name
 		"sortable": True,
-	  },
-	  {
+		},
+		{
 		"field": "total_warnings_count",
 		"title": "total number of warnings",
 		"sortable": True,
-	  },
-	  {
+		},
+		{
 		"field": "unique_warnings_count",
 		"title": "number of unique warnings",
 		"sortable": True,
-	  },
-	  {
+		},
+		{
 		"field": "severity_rating",
 		"title": "overall severity score",
 		"sortable": True,
-	  }
+		}
 	]
 
 	data = []
@@ -188,9 +188,9 @@ def sum_warning_count():
 	#data = getDummyData('sum_warning_count')
 
 	return render_template("sum_warning_count.html",
-	  data=data,
-	  columns=columns,
-	  title='Aura Borealis')
+		data=data,
+		columns=columns,
+		title='Aura Borealis')
 
 # display all packages that have changed in total warnings, total unique warning, or severity 
 # score between two dates 
@@ -201,35 +201,35 @@ def diff_dates():
 		return search_results(search)
 
 	columns = [
-	  {
+		{
 		"field": "package", # which is the field's name of data key 
 		"title": "package", # display as the table header's name
 		"sortable": True,
-	  },
-	  {
+		},
+		{
 		"field": "num_changes",
 		"title": "total number of warnings changed",
 		"sortable": True,
-	  },
+		},
 	 {
 		"field": "num_changes_unique",
 		"title": "number of unique warnings changed",
 		"sortable": True,
-	  },
-	  {
+		},
+		{
 		"field": "changes_score",
 		"title": "change in overall severity score",
 		"sortable": True,
-	  },
+		},
 	]
 
 	data = getDummyData('diff_dates')
 
 	return render_template("diff_dates.html",
-	  data=data,
-	  columns=columns,
-	  title='Aura Borealis',
-	  form=search)
+		data=data,
+		columns=columns,
+		title='Aura Borealis',
+		form=search)
 
 # display all lines of code associated with a package, warnings, and severity
 @app.route('/loc/', methods=['GET', 'POST'])
@@ -247,21 +247,21 @@ def loc():
 		LOCs = get_LOC_by_warning(package, warning, severity)
 
 	columns = [
-	  {
+		{
 		"field": "line", # which is the field's name of data key 
 		"title": "line with warning", # display as the table header's name
 		"sortable": True,
-	  },
-	  {
+		},
+		{
 		"field": "code", # which is the field's name of data key 
 		"title": "source code", # display as the table header's name
 		"sortable": True,
-	  },
-	  {
+		},
+		{
 		"field": "filename", # which is the field's name of data key 
 		"title": "filename", # display as the table header's name
 		"sortable": True,
-	  },
+		},
 	]
 
 	data = []
@@ -270,14 +270,14 @@ def loc():
 		data.append({'line':loc[1], 'code':loc[0], 'filename':loc[2].split('$')[1]})
 
 	return render_template("loc.html",
-	  data=data,
-	  columns=columns,
-	  title='Aura Borealis',
-	  package=package,
-	  warning=warning)
+		data=data,
+		columns=columns,
+		title='Aura Borealis',
+		package=package,
+		warning=warning)
 
 # display a comparison between two packages, two versions, or a package and a benchmark profile
-# https://prismjs.com/#examples  <--- use this for hover over LOC TODO
+# https://prismjs.com/#examples	<--- use this for hover over LOC TODO
 # http://inria.github.io/sparklificator/ <-- TODO
 @app.route('/comparison/', methods=['GET', 'POST'])
 def comparison():
@@ -321,30 +321,30 @@ def comparison():
 		data.append({"package1": p1_sum,"package2": p2_sum,"warning_type": "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#" + warning_type.lower() + "'>" + warning_type + "</a>"})
 
 	columns = [
-	  {
+		{
 		"field": "package1", # which is the field's name of data key 
 		"title": "<a href='/single_package?package=" + package1 + "'>" + package1 + "</a>", # display as the table header's name
 		"sortable": True,
-	  },
-	  {
+		},
+		{
 		"field": "package2",
 		"title": "<a href='/single_package?package=" + package2 + "'>" + package2 + "</a>",
 		"sortable": True,
-	  },
+		},
 	 {
 		"field": "warning_type",
 		"title": "warning type",
 		"sortable": True,
-	  },
+		},
 	]
 
 	return render_template("comparison.html",
-	  data=data,
-	  columns=columns,
-	  title='Aura Borealis',
-	  form=search,
-	  package1=package1,
-	  package2=package2)
+		data=data,
+		columns=columns,
+		title='Aura Borealis',
+		form=search,
+		package1=package1,
+		package2=package2)
 
 # display warning information for a single package
 @app.route('/single_package/', methods=['GET', 'POST'])
@@ -378,45 +378,45 @@ def single_package():
 		"field": "warning_type",
 		"title": "warning type",
 		"sortable": True,
-	  },
-	  {
+		},
+		{
 		"field": "critical", # which is the field's name of data key 
 		"title": "critical", # display as the table header's name
 		"sortable": True,
-	  },
-	  {
+		},
+		{
 		"field": "severe",
 		"title": "severe",
 		"sortable": True,
-	  },
-	  {
+		},
+		{
 		"field": "moderate", # which is the field's name of data key 
 		"title": "moderate", # display as the table header's name
 		"sortable": True,
-	  },
-	  {
+		},
+		{
 		"field": "low",
 		"title": "low",
 		"sortable": True,
-	  },
-	  {
+		},
+		{
 		"field": "unknown",
 		"title": "unknown",
 		"sortable": True,
-	  },
+		},
 	]
 
 	return render_template("single_package.html",
-	  data=data,
-	  columns=columns,
-	  title='Aura Borealis',
-	  package=package,
-	  score=score)
+		data=data,
+		columns=columns,
+		title='Aura Borealis',
+		package=package,
+		score=score)
 
 # #########################################################################################################
 # MAIN
 # #########################################################################################################
 
 if __name__ == '__main__':
-  app.run(host='0.0.0.0', debug=True)
+	app.run(host='0.0.0.0', debug=True)
 
