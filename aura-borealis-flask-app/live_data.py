@@ -104,7 +104,7 @@ def get_package_score(package):
 	curs = conn.cursor()
 
 	curs.execute(
-		"select score from aura_detections where package='" + package + "'" + DEBUG
+		"select score from aura_detections where package='" + package + "'" 
 	)
 
 	score = 0

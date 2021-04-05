@@ -291,8 +291,8 @@ def comparison():
 		package2 = request.args.get('package2')
 
 	if package1 == None:
-		package1 = "boto"
-		package2 = "requests"
+		package1 = "pykalman"
+		package2 = "gps-helper-cs"
 
 	score1 = get_package_score(package1)
 	score2 = get_package_score(package2)
@@ -352,7 +352,7 @@ def single_package():
 	package = request.args.get('package')
 	print(package)
 	if package == None:
-		package = 'requests'
+		package = 'gps-helper-cs'
 
 	score = get_package_score(package)
 
