@@ -162,12 +162,12 @@ def sum_warning_count():
 		},
 		{
 		"field": "total_warnings_count",
-		"title": "total number of warnings",
+		"title": "total number of indicators",
 		"sortable": True,
 		},
 		{
 		"field": "unique_warnings_count",
-		"title": "number of unique warnings",
+		"title": "number of unique indicators",
 		"sortable": True,
 		},
 		{
@@ -208,12 +208,12 @@ def diff_dates():
 		},
 		{
 		"field": "num_changes",
-		"title": "total number of warnings changed",
+		"title": "total number of indicators changed",
 		"sortable": True,
 		},
 	 {
 		"field": "num_changes_unique",
-		"title": "number of unique warnings changed",
+		"title": "number of unique indicators changed",
 		"sortable": True,
 		},
 		{
@@ -249,7 +249,7 @@ def loc():
 	columns = [
 		{
 		"field": "line", # which is the field's name of data key 
-		"title": "line with warning", # display as the table header's name
+		"title": "line with indicators", # display as the table header's name
 		"sortable": True,
 		},
 		{
@@ -333,7 +333,7 @@ def comparison():
 		},
 	 {
 		"field": "warning_type",
-		"title": "warning type",
+		"title": "indicator type",
 		"sortable": True,
 		},
 	]
@@ -376,7 +376,7 @@ def single_package():
 	columns = [
 	 {
 		"field": "warning_type",
-		"title": "warning type",
+		"title": "indicator type",
 		"sortable": True,
 		},
 		{
