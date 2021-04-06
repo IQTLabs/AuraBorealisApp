@@ -3,7 +3,10 @@ This file loads live Aura data
 """
 from elasticsearch import Elasticsearch
 from es.elastic.api import connect
-HOST = '192.168.68.9'
+from elasticsearch_dsl import Search
+
+#HOST = '192.168.68.9'
+HOST = 'localhost'
 
 DEBUG = " limit 100"
 
@@ -59,6 +62,25 @@ def get_LOC_by_warning(package, warning, severity):
 	return results
 
 # http://192.168.68.9:5601/app/kibana#/discover?_g=(filters:!(),refreshInterval:(pause:!t,value:0),time:(from:now-1y,to:now))&_a=(columns:!(_source),filters:!(),index:'30bc7830-7530-11eb-870c-ad2473be90c7',interval:auto,query:(language:kuery,query:''),sort:!())
+
+
+def get_all_warnings_x(warning_type, all_warnings):
+    client = Elasticsearch(host=HOST)
+    s = Search(using=client)
+    s = s.source(['package', 'type', 'severity', 'score', 'line','line_no'])
+    s = s.query("match", type=warning_type)
+    #s = s.query("multi_match", type=warning_type, fields=['package', 'type', 'severity', 'score', 'line','line_no'])
+    print(s.to_dict())
+    #response = s.execute()
+    #print(response)
+    #for i in response:
+        #print(i)
+
+    for hit in s.scan():
+        print(hit.package)
+
+
+
 def get_all_warnings(warning_type, all_warnings):
 	"""
 	get all the warnings for a warning_type across all packages
@@ -209,8 +231,13 @@ def iterate_distinct_field(fieldname, pagesize=250, **kwargs):
             break
 
 def get_unique_warnings():
-    res = iterate_distinct_field(es, fieldname="severity.keyword", index="aura_detections")
+    res = iterate_distinct_field(fieldname="severity.keyword", index="aura_detections")
     for result in res:
         print(result)
     return res
 
+if __name__ == '__main__':
+    #get_unique_warnings()
+    all_warnings = {}
+    get_all_warnings_x('LeakingSecret', all_warnings)  
+  
