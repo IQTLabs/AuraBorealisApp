@@ -4,8 +4,7 @@
 
 AuraBorealis is a web application for visualizing anomalous and potentially malicious code in Python package registries. It
 uses security audit data produced by scanning the Python Package Index (PyPI) via [Aura](https://github.com/SourceCode-AI/aura), a
-static analysis designed for large scale security auditing of Python packages
-.
+static analysis designed for large scale security auditing of Python packages.
 The current tool is a proof-of-concept, and includes some live Aura data, as well as some mockup data for demo purposes.
 
 Current features include:
