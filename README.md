@@ -4,8 +4,7 @@
 
 AuraBorealis is a web application for visualizing anomalous and potentially malicious code in Python package registries. It
 uses security audit data produced by scanning the Python Package Index (PyPI) via [Aura](https://github.com/SourceCode-AI/aura), a
-static analysis designed for large scale security auditing of Python packages
-.
+static analysis designed for large scale security auditing of Python packages.
 The current tool is a proof-of-concept, and includes some live Aura data, as well as some mockup data for demo purposes.
 
 Current features include:
@@ -22,11 +21,23 @@ Current features include:
 
 ## Instructions
 
-Make sure you have installed [Flask](https://flask.palletsprojects.com/en/1.1.x/installation/), [Flask-Datepicker](https://pypi.org/project/Flask-Datepicker/) and [Elastic Search](https://elasticsearch-py.readthedocs.io/en/6.8.2/).
+Clone the repository.
 
-After downloading this repository, go to the root directory and run 
+`git clone https://github.com/IQTLabs/AuraBorealisApp.git`
+
+Navigate to aura-borealis-flask-app directory.
+
+`cd aura-borealis-flask-app`
+
+Install dependencies.
+
+`pip install requirements.txt`
+
+Run the app.
+
 `python app.py` 
-Navigate to the URL in your browser that it shows: `http://0.0.0.0:5000/`
+
+Navigate to the URL `http://0.0.0.0:5000/` via a browser.
 
 ## Feature Roadmap
 
