@@ -1,14 +1,16 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, make_response, jsonify
 from flask_datepicker import datepicker
 import json
+import time
 
 from search import PackageSearch
 import os
 SECRET_KEY = os.urandom(32)
 
-from live_data import connect_and_load_default, get_all_warnings_counts, get_warnings_by_package, get_LOC_by_warning, get_package_score
+from live_data import connect_and_load_default, get_all_warnings_counts_x, get_warnings_by_package, get_LOC_by_warning, get_package_score, get_unique_package_list
 from dummy_data import *
 
+unique_packages = []
 
 # hand select certain packages and warnings for demo purposes
 PACKAGES = ['requests', 'network', 'pycurl', 'pandas', 'boto', 'sqlint', 'ssh-python', 'sqlmap', 
@@ -29,6 +31,12 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = SECRET_KEY
 datepicker(app)
 
+init_all_warnings = {}
+init_all_unique_warnings = {}
+init_all_severities = {}
+def sum_warning_count_init():
+        for warning_type in WARNING_TYPES:
+                get_all_warnings_counts_x(warning_type, init_all_warnings, init_all_unique_warnings, init_all_severities)
 
 @app.route('/')
 def home():
@@ -141,17 +149,17 @@ def top_warnings():
 # display all the packages by their overall severity scores, total warnings, and total unique warnings
 @app.route('/sum_warning_count/', methods=['GET', 'POST'])
 def sum_warning_count():
-	all_warnings = {}
-	all_unique_warnings = {}
-	all_severities = {}
-	for warning_type in WARNING_TYPES:
-		get_all_warnings_counts(warning_type, all_warnings, all_unique_warnings, all_severities)
+	#all_warnings = {}
+	#all_unique_warnings = {}
+	#all_severities = {}
+	#for warning_type in WARNING_TYPES:
+	#	get_all_warnings_counts_x(warning_type, all_warnings, all_unique_warnings, all_severities)
 
 	all_unique_warnings_summed = {}
-	for package in all_unique_warnings.keys():
+	for package in init_all_unique_warnings.keys():
 		count = 0
-		for warning in all_unique_warnings[package].keys():
-			count += all_unique_warnings[package][warning]
+		for warning in init_all_unique_warnings[package].keys():
+			count += init_all_unique_warnings[package][warning]
 		all_unique_warnings_summed[package] = count
 
 	columns = [
@@ -178,11 +186,11 @@ def sum_warning_count():
 	]
 
 	data = []
-	for package in all_severities.keys():
+	for package in init_all_severities.keys():
 		entry = {"package": "<a href='/single_package?package=" + package + "'>" + package + "</a>"}
-		entry['total_warnings_count'] = all_warnings[package]
+		entry['total_warnings_count'] = init_all_warnings[package]
 		entry['unique_warnings_count'] = all_unique_warnings_summed[package]
-		entry['severity_rating'] = all_severities[package]
+		entry['severity_rating'] = init_all_severities[package]
 		data.append(entry)
 
 	#data = getDummyData('sum_warning_count')
@@ -350,9 +358,11 @@ def comparison():
 @app.route('/single_package/', methods=['GET', 'POST'])
 def single_package():
 	package = request.args.get('package')
-	print(package)
 	if package == None:
-		package = 'gps-helper-cs'
+                if request.method == "POST":
+                    package = request.form['package']
+                else:
+                    package = 'gps-helper-cs'
 
 	score = get_package_score(package)
 
@@ -413,10 +423,28 @@ def single_package():
 		package=package,
 		score=score)
 
+@app.route('/autocomplete/<inp>', methods=['GET'])
+def autocomplete(inp):
+    pkg_list = []
+    #print(unique_packages)
+    #unique_packages = get_unique_package_list()
+    #for pkg in unique_packages:
+    #    pkg_list.extend(map(lambda st: st.strip(), map(lambda s: str(s), pkg.split(','))))
+    filtered=filter(lambda ing: ing.startswith(inp),set(unique_packages))
+    #print(list(filtered))
+    return jsonify({"listaing":list(filtered)})
+    #return make_response({"listaing":list(filtered)}, 200)
+
 # #########################################################################################################
 # MAIN
 # #########################################################################################################
 
 if __name__ == '__main__':
-	app.run(host='0.0.0.0', debug=True)
+        print("Initializing App Data")
+        tic = time.perf_counter()
+        sum_warning_count_init()
+        unique_packages = get_unique_package_list()
+        toc = time.perf_counter()
+        print(f"App data initialized -  {toc - tic:0.4f} seconds")
+        app.run(host='0.0.0.0', debug=True)
 

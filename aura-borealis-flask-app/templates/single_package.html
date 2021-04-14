@@ -23,6 +23,7 @@
         href="https://cdnjs.cloudflare.com/ajax/libs/font-
         awesome/4.7.0/css/font-awesome.min.css">
   <link rel="stylesheet" href="/static/index.css">
+  <script src="{{ url_for('static', filename='js/autocomplete.js') }}"></script>
   <script type='text/javascript'>
     var pack = {{package|tojson}};
     var score = {{score|tojson}};
@@ -47,6 +48,30 @@
         <img src="/static/logo.png">
         <h3 class="logo">View all indicators for a single package</h1>
         <a href="/">back to menu</a>
+    <br/>
+    <br/>
+    <form method="POST" autocomplete="off">
+    <div class='col-xs-12 col-sm-12 col-md-10 col-lg-10'>
+        <div class='input-group'>
+		<label for="autocomplete">Search</label>
+		<input oninput="dropdown(this.value)" id="autocomplete" class='form-control' type='text' name='package'
+                   placeholder='Enter package name ...'/>
+            <span class="input-group-btn">
+              <button id="searchBtn" type='submit' class='btn btn-default'>
+                <span class='glyphicon glyphicon-search'></span>
+              </button>
+            </span>
+
+        </div>
+    </div>
+    </form>
+    <!--
+    <form class="example" method="post" action="">
+            <input type="text" placeholder="Search by package" name="package">
+            <button type="submit">Submit</button>
+    </form>
+    -->
+    <br/>
     <br/>
     <br/>
     <br/>

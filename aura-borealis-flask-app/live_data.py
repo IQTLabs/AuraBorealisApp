@@ -1,14 +1,65 @@
 """
 This file loads live Aura data
 """
-from elasticsearch import Elasticsearch
+from elasticsearch import Elasticsearch, RequestsHttpConnection
 from es.elastic.api import connect
-from elasticsearch_dsl import Search
+from elasticsearch_dsl import Search, A
+#from requests_aws4auth import AWS4Auth
 
 #HOST = '192.168.68.9'
 HOST = 'localhost'
-
+#HOST = 'vpc-auradata-gvykpxgobffy7eomi2q7hmqbma.us-east-1.es.amazonaws.com'
 DEBUG = " limit 100"
+
+def scan_aggs(search, source_aggs, inner_aggs={}, size=10):
+    """
+    Helper function used to iterate over all possible bucket combinations of
+    ``source_aggs``, returning results of ``inner_aggs`` for each. Uses the
+    ``composite`` aggregation under the hood to perform this.
+    """
+
+    def run_search(**kwargs):
+        s = search[:0]
+        s.aggs.bucket("comp", "composite", sources=source_aggs, size=size, **kwargs)
+        for agg_name, agg in inner_aggs.items():
+            s.aggs["comp"][agg_name] = agg
+        return s.execute()
+
+    response = run_search()
+    while response.aggregations.comp.buckets:
+        for b in response.aggregations.comp.buckets:
+            yield b
+        if "after_key" in response.aggregations.comp:
+            after = response.aggregations.comp.after_key
+        else:
+            after = response.aggregations.comp.buckets[-1].key
+        response = run_search(after=after)
+
+
+def get_unique_package_list():
+    client = Elasticsearch(host=HOST)
+    #client = Elasticsearch(host='vpc-auradata-gvykpxgobffy7eomi2q7hmqbma.us-east-1.es.amazonaws.com')
+
+    unique_packages = []
+    for b in scan_aggs(
+        Search(using=client),
+        {"unique_packages": A("terms", field="package.keyword")}
+    ):
+        unique_packages.append(b.key.unique_packages)
+
+    print(unique_packages)
+    return unique_packages
+
+    #s = Search(using=client).params(request_timeout=30)
+    #a = A('terms', field='package')
+    #s.aggs.bucket('unique_packages', a)
+    #print(s.to_dict())
+    #response = s.execute()
+    #for tag in response.aggregations.unique_packages.buckets:
+    #    print(tag)
+    #for hit in s.scan():
+        #print(type(hit))
+        #print(hit)
 
 def get_warnings_by_package(package, warning, severity, package_warnings):
 	"""
@@ -25,7 +76,7 @@ def get_warnings_by_package(package, warning, severity, package_warnings):
 	curs = conn.cursor()
 
 	curs.execute(
-			    "select count(*) from aura_detections where package='" + package + "' and type='" + warning + "' and severity='" + severity + "'"
+			    "select count(*) from aura_detections where package='" + package + "' and type='" + warning + "' and severity='" + severity + "' and tags.keyword != 'test_code'"
 		)
 	for row in curs:
 		if warning not in package_warnings.keys():
@@ -50,9 +101,9 @@ def get_LOC_by_warning(package, warning, severity):
 	conn = connect(host=HOST)
 	curs = conn.cursor()
 
-	print("select line, line_no, location from aura_detections where package='" + package + "' and type='" + warning + "' and severity='" + severity + "'")
+	print("select line, line_no, location from aura_detections where package='" + package + "' and type='" + warning + "' and severity='" + severity + "'  and tags.keyword != 'test_code'")
 	curs.execute(
-			    "select line, line_no, location from aura_detections where package='" + package + "' and type='" + warning + "' and severity='" + severity + "'"
+			    "select line, line_no, location from aura_detections where package='" + package + "' and type='" + warning + "' and severity='" + severity + "'  and tags.keyword != 'test_code'"
 		)
 	results = []
 	for row in curs:
@@ -66,9 +117,11 @@ def get_LOC_by_warning(package, warning, severity):
 
 def get_all_warnings_x(warning_type, all_warnings):
     client = Elasticsearch(host=HOST)
+    #s = Search(using=client, index='production-logs-2021.04.14').params(request_timeout=60)
     s = Search(using=client)
     s = s.source(['package', 'type', 'severity', 'score', 'line','line_no'])
     s = s.query("match", type=warning_type)
+    s = s.exclude("match", tag="test_code")
     #s = s.query("multi_match", type=warning_type, fields=['package', 'type', 'severity', 'score', 'line','line_no'])
     print(s.to_dict())
     #response = s.execute()
@@ -77,10 +130,22 @@ def get_all_warnings_x(warning_type, all_warnings):
         #print(i)
 
     for hit in s.scan():
-        print(hit.package)
+        print(hit)
+        if hit.package not in all_warnings.keys():
+                        all_warnings[hit.package] = []
+        if not hasattr(hit, "severity"):
+            hit.severity = None
+        if not hasattr(hit, "score"):
+            hit.score = None
+        if not hasattr(hit, "line"):
+            hit.line = None
+        if not hasattr(hit, "line_no"):
+            hit.line_no = None
+        all_warnings[hit.package].append({'warning_type':warning_type, 'severity':hit.severity, 'score':hit.score, 'line':hit.line, 'line_no':hit.line_no})
+    print(all_warnings)
 
 
-
+'''
 def get_all_warnings(warning_type, all_warnings):
 	"""
 	get all the warnings for a warning_type across all packages
@@ -108,7 +173,7 @@ def get_all_warnings(warning_type, all_warnings):
 		if package not in all_warnings.keys():
 			all_warnings[package] = []
 		all_warnings[package].append({'warning_type':warning_type, 'severity':severity, 'score':score, 'line':line, 'line_no':line_no})
-
+'''
 def get_package_score(package):
 	"""
 	gets the severity score for a package
@@ -126,13 +191,42 @@ def get_package_score(package):
 	curs = conn.cursor()
 
 	curs.execute(
-		"select score from aura_detections where package='" + package + "'" 
+		"select score from aura_detections where package='" + package + "' and tags.keyword != 'test_code'" 
 	)
 
 	score = 0
 	for row in curs:
 		score += int(row[0])
 	return score
+
+def get_all_warnings_counts_x(warning_type, all_warnings, all_unique_warnings, all_severities):
+    client = Elasticsearch(host=HOST)
+    s = Search(using=client).params(request_timeout=30)
+    s = s.source(['package', 'type', 'severity', 'score'])
+    s = s.query("match", type=warning_type)
+    s = s.exclude("match", tag="test_code")
+    print(s.to_dict())
+
+    for hit in s.scan():
+        #print(hit)
+        if not hasattr(hit, "severity"):
+            hit.severity = None
+        if not hasattr(hit, "score"):
+            hit.score = None
+        
+        if hit.package not in all_warnings.keys():
+                        all_warnings[hit.package] = 0
+        all_warnings[hit.package] += 1
+
+        if hit.package not in all_unique_warnings.keys():
+                        all_unique_warnings[hit.package] = {}
+        if warning_type not in all_unique_warnings[hit.package].keys():
+                        all_unique_warnings[hit.package][warning_type] = 1
+
+        if hit.package not in all_severities.keys():
+                        all_severities[hit.package] = 0
+        all_severities[hit.package] += int(hit.score)
+
 
 def get_all_warnings_counts(warning_type, all_warnings, all_unique_warnings, all_severities):
 	"""
@@ -189,7 +283,7 @@ def connect_and_load_default(warning_types):
 
 	all_warnings = {}
 	for warning in warning_types:
-		get_all_warnings(warning, all_warnings)
+		get_all_warnings_x(warning, all_warnings)
 	return all_warnings
 
 
@@ -238,6 +332,7 @@ def get_unique_warnings():
 
 if __name__ == '__main__':
     #get_unique_warnings()
-    all_warnings = {}
-    get_all_warnings_x('LeakingSecret', all_warnings)  
+    #all_warnings = {}
+    #get_all_warnings_x('SensitiveFile', all_warnings) 
+    get_unique_package_list()
   
