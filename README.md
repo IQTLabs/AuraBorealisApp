@@ -1,5 +1,8 @@
 # AuraBorealis: Do You Know What's In Your Python Packages?
 
+[AuraBorealis homepage user interface](auraborealis_homepage_ui.png)
+
+
 ## About
 
 AuraBorealis is a web application for visualizing anomalous and potentially malicious code in Python package registries. It
