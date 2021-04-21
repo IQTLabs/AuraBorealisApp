@@ -1,6 +1,6 @@
 # AuraBorealis: Do You Know What's In Your Python Packages?
 
-[AuraBorealis homepage user interface](auraborealis_homepage_ui.png)
+![AuraBorealis homepage user interface](auraborealis_homepage_ui.png)
 
 
 ## About
