@@ -47,7 +47,7 @@ def get_unique_package_list():
     ):
         unique_packages.append(b.key.unique_packages)
 
-    print(unique_packages)
+    #print(unique_packages)
     return unique_packages
 
     #s = Search(using=client).params(request_timeout=30)
@@ -330,9 +330,9 @@ def get_unique_warnings():
         print(result)
     return res
 
-if __name__ == '__main__':
+#if __name__ == '__main__':
     #get_unique_warnings()
     #all_warnings = {}
     #get_all_warnings_x('SensitiveFile', all_warnings) 
-    get_unique_package_list()
+    #get_unique_package_list()
   
