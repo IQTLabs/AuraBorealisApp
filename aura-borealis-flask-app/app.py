@@ -6,7 +6,8 @@ from search import PackageSearch
 import os
 SECRET_KEY = os.urandom(32)
 
-from live_data import connect_and_load_default, get_all_warnings_counts, get_warnings_by_package, get_LOC_by_warning, get_package_score
+from live_data import connect_and_load_default, get_all_warnings_counts, get_warnings_by_package, get_LOC_by_warning
+from live_data import get_package_score, get_score_percentiles, get_all_scores
 from dummy_data import *
 
 
@@ -21,6 +22,70 @@ WARNING_TYPES = ['LeakingSecret', 'SuspiciousFile', 'SQLInjection', 'SensitiveFi
 
 SEVERITIES = ['critical', 'severe', 'moderate', 'low', 'unknown']
 
+
+def get_user_selected_warnings(request):
+	'''
+		collects all the checked checkboxes from a POST request used on various forms, 
+		and returns them as a list of strings
+	'''
+	warning_types_selected = []
+	if request.form.get('LeakingSecret') != None:
+		warning_types_selected.append(request.form.get('LeakingSecret'))
+	if request.form.get('SuspiciousFile') != None:
+		warning_types_selected.append(request.form.get('SuspiciousFile'))
+	if request.form.get('SensitiveFile') != None:
+		warning_types_selected.append(request.form.get('SensitiveFile'))
+	if request.form.get('SQLInjection') != None:
+		warning_types_selected.append(request.form.get('SQLInjection'))
+	if request.form.get('SetupScript') != None:
+		warning_types_selected.append(request.form.get('SetupScript'))
+	if request.form.get('FunctionCall') != None:
+		warning_types_selected.append(request.form.get('FunctionCall'))
+	if request.form.get('ModuleImport') != None:
+		warning_types_selected.append(request.form.get('ModuleImport'))
+	if request.form.get('Base64Blob') != None:
+		warning_types_selected.append(request.form.get('Base64Blob'))
+	if request.form.get('Binwalk') != None:
+		warning_types_selected.append(request.form.get('Binwalk'))
+	if request.form.get('CryptoKeyGeneration') != None:
+		warning_types_selected.append(request.form.get('CryptoKeyGeneration'))
+	if request.form.get('DataProcessing') != None:
+		warning_types_selected.append(request.form.get('DataProcessing'))
+	if request.form.get('Detection') != None:
+		warning_types_selected.append(request.form.get('Detection'))
+	if request.form.get('InvalidRequirement') != None:
+		warning_types_selected.append(request.form.get('InvalidRequirement'))
+	if request.form.get('MalformedXML') != None:
+		warning_types_selected.append(request.form.get('MalformedXML'))
+	if request.form.get('ArchiveAnomaly') != None:
+		warning_types_selected.append(request.form.get('ArchiveAnomaly'))
+	if request.form.get('SuspiciousArchiveEntry') != None:
+		warning_types_selected.append(request.form.get('SuspiciousArchiveEntry'))
+	if request.form.get('OutdatedPackage') != None:
+		warning_types_selected.append(request.form.get('OutdatedPackage'))
+	if request.form.get('UnpinnedPackage') != None:
+		warning_types_selected.append(request.form.get('UnpinnedPackage'))
+	if request.form.get('TaintAnomaly') != None:
+		warning_types_selected.append(request.form.get('TaintAnomaly'))
+	if request.form.get('Wheel') != None:
+		warning_types_selected.append(request.form.get('Wheel'))
+	if request.form.get('StringMatch') != None:
+		warning_types_selected.append(request.form.get('StringMatch'))
+	if request.form.get('FileStats') != None:
+		warning_types_selected.append(request.form.get('FileStats'))
+	if request.form.get('YaraMatch') != None:
+		warning_types_selected.append(request.form.get('YaraMatch'))
+	if request.form.get('YaraError') != None:
+		warning_types_selected.append(request.form.get('YaraError'))
+	if request.form.get('ASTAnalysisError') != None:
+		warning_types_selected.append(request.form.get('ASTAnalysisError'))
+	if request.form.get('ASTParseError') != None:
+		warning_types_selected.append(request.form.get('ASTParseError'))
+	if request.form.get('Misc') != None:
+		warning_types_selected.append(request.form.get('Misc'))
+
+	return warning_types_selected
+
 # #########################################################################################################
 # SET UP FLASK APP
 # #########################################################################################################
@@ -29,9 +94,12 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = SECRET_KEY
 datepicker(app)
 
+all_raw_scores = get_all_scores()
+print(all_raw_scores)
 
 @app.route('/')
 def home():
+	print(get_score_percentiles(all_raw_scores, 5))
 	return render_template('./home.html')
 
 @app.route('/about/')
@@ -45,62 +113,7 @@ def top_warnings():
 	warning_types_selected = []
 
 	if request.method == 'POST':
-		warning_types_selected = []
-		if request.form.get('LeakingSecret') != None:
-			warning_types_selected.append(request.form.get('LeakingSecret'))
-		if request.form.get('SuspiciousFile') != None:
-			warning_types_selected.append(request.form.get('SuspiciousFile'))
-		if request.form.get('SensitiveFile') != None:
-			warning_types_selected.append(request.form.get('SensitiveFile'))
-		if request.form.get('SQLInjection') != None:
-			warning_types_selected.append(request.form.get('SQLInjection'))
-		if request.form.get('SetupScript') != None:
-			warning_types_selected.append(request.form.get('SetupScript'))
-		if request.form.get('FunctionCall') != None:
-			warning_types_selected.append(request.form.get('FunctionCall'))
-		if request.form.get('ModuleImport') != None:
-			warning_types_selected.append(request.form.get('ModuleImport'))
-		if request.form.get('Base64Blob') != None:
-			warning_types_selected.append(request.form.get('Base64Blob'))
-		if request.form.get('Binwalk') != None:
-			warning_types_selected.append(request.form.get('Binwalk'))
-		if request.form.get('CryptoKeyGeneration') != None:
-			warning_types_selected.append(request.form.get('CryptoKeyGeneration'))
-		if request.form.get('DataProcessing') != None:
-			warning_types_selected.append(request.form.get('DataProcessing'))
-		if request.form.get('Detection') != None:
-			warning_types_selected.append(request.form.get('Detection'))
-		if request.form.get('InvalidRequirement') != None:
-			warning_types_selected.append(request.form.get('InvalidRequirement'))
-		if request.form.get('MalformedXML') != None:
-			warning_types_selected.append(request.form.get('MalformedXML'))
-		if request.form.get('ArchiveAnomaly') != None:
-			warning_types_selected.append(request.form.get('ArchiveAnomaly'))
-		if request.form.get('SuspiciousArchiveEntry') != None:
-			warning_types_selected.append(request.form.get('SuspiciousArchiveEntry'))
-		if request.form.get('OutdatedPackage') != None:
-			warning_types_selected.append(request.form.get('OutdatedPackage'))
-		if request.form.get('UnpinnedPackage') != None:
-			warning_types_selected.append(request.form.get('UnpinnedPackage'))
-		if request.form.get('TaintAnomaly') != None:
-			warning_types_selected.append(request.form.get('TaintAnomaly'))
-		if request.form.get('Wheel') != None:
-			warning_types_selected.append(request.form.get('Wheel'))
-		if request.form.get('StringMatch') != None:
-			warning_types_selected.append(request.form.get('StringMatch'))
-		if request.form.get('FileStats') != None:
-			warning_types_selected.append(request.form.get('FileStats'))
-		if request.form.get('YaraMatch') != None:
-			warning_types_selected.append(request.form.get('YaraMatch'))
-		if request.form.get('YaraError') != None:
-			warning_types_selected.append(request.form.get('YaraError'))
-		if request.form.get('ASTAnalysisError') != None:
-			warning_types_selected.append(request.form.get('ASTAnalysisError'))
-		if request.form.get('ASTParseError') != None:
-			warning_types_selected.append(request.form.get('ASTParseError'))
-		if request.form.get('Misc') != None:
-			warning_types_selected.append(request.form.get('Misc'))
-
+		warning_types_selected = get_user_selected_warnings(request)
 		dict_packages = connect_and_load_default(set(warning_types_selected))
 
 	else:
@@ -145,7 +158,7 @@ def sum_warning_count():
 	all_unique_warnings = {}
 	all_severities = {}
 	for warning_type in WARNING_TYPES:
-		get_all_warnings_counts(warning_type, all_warnings, all_unique_warnings, all_severities)
+		get_all_warnings_counts(warning_type, all_warnings, all_unique_warnings, all_severities, all_raw_scores)
 
 	all_unique_warnings_summed = {}
 	for package in all_unique_warnings.keys():
@@ -294,8 +307,8 @@ def comparison():
 		package1 = "pykalman"
 		package2 = "gps-helper-cs"
 
-	score1 = get_package_score(package1)
-	score2 = get_package_score(package2)
+	score1 = get_score_percentiles(all_raw_scores, get_package_score(package1))
+	score2 = get_score_percentiles(all_raw_scores, get_package_score(package2))
 
 	data = []
 	data.append({"package1": score1,"package2": score2,"warning_type": "OVERALL SEVERITY"})
@@ -349,29 +362,71 @@ def comparison():
 # display warning information for a single package
 @app.route('/single_package/', methods=['GET', 'POST'])
 def single_package():
+
+	warning_types_selected = []
+	if request.method == 'POST':
+		warning_types_selected = get_user_selected_warnings(request)
+	else:
+		warning_types_selected = WARNING_TYPES
+
 	package = request.args.get('package')
 	print(package)
 	if package == None:
 		package = 'gps-helper-cs'
 
-	score = get_package_score(package)
+	score = get_score_percentiles(all_raw_scores, get_package_score(package))
 
 	count_warnings = {}
 	for severity in SEVERITIES:
-		for warning_type in WARNING_TYPES:
+		for warning_type in warning_types_selected:
 			 get_warnings_by_package(package, warning_type, severity, count_warnings)
 
 	data = []
-	for warning_type in WARNING_TYPES:
+	cleaned_locs = []
+	for warning_type in warning_types_selected:
 		entry = {}
 		entry["warning_type"] = "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#" + warning_type.lower() + "' target='_blank'>" + warning_type + "</a>"
+		found_non_empty = False
 		for severity in SEVERITIES:
 			if count_warnings[warning_type][severity] != 0:
+				found_non_empty = True
 				entry[severity] = '<a href="/loc?package=' + package + '&warning=' + warning_type + '&severity=' + severity + '" target="_blank">' + str(count_warnings[warning_type][severity]) + '</a>' 
 			else:
 				entry[severity] = 0
-		data.append(entry)
 
+			LOCs = get_LOC_by_warning(package, warning_type, severity)
+			for loc in LOCs:
+				cleaned_locs.append({'warning_type':warning_type, 'severity':severity, 'line':loc[1], 'code':loc[0], 'filename':loc[2].split('$')[1]})
+		if found_non_empty:
+			data.append(entry)
+
+	loc_columns = [
+	 {
+		"field": "warning_type",
+		"title": "indicator type",
+		"sortable": True,
+		},
+		{
+		"field": "severity", # which is the field's name of data key 
+		"title": "severity", # display as the table header's name
+		"sortable": True,
+		},
+		{
+		"field": "line",
+		"title": "line",
+		"sortable": True,
+		},
+		{
+		"field": "code", # which is the field's name of data key 
+		"title": "code", # display as the table header's name
+		"sortable": True,
+		},
+		{
+		"field": "filename",
+		"title": "filename",
+		"sortable": True,
+		},
+	]
 
 	columns = [
 	 {
@@ -411,7 +466,9 @@ def single_package():
 		columns=columns,
 		title='Aura Borealis',
 		package=package,
-		score=score)
+		score=score,
+		data_cleaned_locs=cleaned_locs,
+		loc_columns=loc_columns)
 
 # #########################################################################################################
 # MAIN

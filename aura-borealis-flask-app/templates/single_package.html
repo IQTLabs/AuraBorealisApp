@@ -18,6 +18,10 @@
       width: 50px;
       display: inline-block;
     }
+
+    td {
+    padding: 15px;
+    } 
   </style>
   <link rel="stylesheet"
         href="https://cdnjs.cloudflare.com/ajax/libs/font-
@@ -26,6 +30,8 @@
   <script type='text/javascript'>
     var pack = {{package|tojson}};
     var score = {{score|tojson}};
+    var cleaned_locs = {{data_cleaned_locs|tojson}};
+    var loc_columns = {{loc_columns|tojson}};
 
     $(window).load(function(){
       var data = {{data|tojson}};
@@ -36,7 +42,10 @@
           data: data,
           columns: columns,
         });
-
+        $('#loc-table').bootstrapTable({ 
+          data: cleaned_locs,
+          columns: loc_columns,
+        });
       });
 
     });
@@ -52,9 +61,105 @@
     <br/>
     <h4>Package: <b><script>document.write(pack);</script><b></h4>
     <h4>Overall severity score: <i><script>document.write(score);</script></i></h4>
+    <br>
+    <div id="columnSelect">
+      <br>
+      <p>Select one or more indicator types to display:</p>
+      <br>
+      <form method="post">
+        <table border="2">
+          <tr align=center >
+            <td><i>imports/files</i></td><td><i>embedded strings</i></td><td><i>setup</i></td><td><i>metadata</i></td><td><i>pattern match</i></td><td><i>other</i></td>
+          </tr>
+          <tr cellpadding="4" cellspacing="5">
+            <td><!-- imports-->
+              <input type="checkbox" id="ModuleImport" name="ModuleImport" value="ModuleImport">
+              <label for="ModuleImport"> ModuleImport</label><br>
+              <input type="checkbox" id="SuspiciousFile" name="SuspiciousFile" value="SuspiciousFile">
+              <label for="SuspiciousFile"> SuspiciousFile</label><br>
+              <input type="checkbox" id="OutdatedPackage" name="OutdatedPackage" value="OutdatedPackage">
+              <label for="OutdatedPackage"> OutdatedPackage</label><br>
+              <input type="checkbox" id="UnpinnedPackage" name="UnpinnedPackage" value="UnpinnedPackage">
+              <label for="OutdatedPackage"> UnpinnedPackage</label><br>
+              <input type="checkbox" id="SensitiveFile" name="SensitiveFile" value="SensitiveFile">
+              <label for="SensitiveFile"> SensitiveFile</label><br>
+            </td>
+            <td><!-- strings-->
+              <input type="checkbox" id="LeakingSecret" name="LeakingSecret" value="LeakingSecret">
+              <label for="LeakingSecret"> LeakingSecret</label><br>
+              <input type="checkbox" id="Base64Blob" name="Base64Blob" value="Base64Blob">
+              <label for="Base64Blob"> Base64Blob</label><br>
+              <input type="checkbox" id="Binwalk" name="Binwalk" value="Binwalk">
+              <label for="Binwalk"> Binwalk</label><br>
+            </td>
+            <td><!-- setup-->
+              <input type="checkbox" id="InvalidRequirement" name="InvalidRequirement" value="InvalidRequirement">
+              <label for="InvalidRequirement"> InvalidRequirement</label><br>
+              <input type="checkbox" id="ArchiveAnomaly" name="ArchiveAnomaly" value="ArchiveAnomaly">
+              <label for="ArchiveAnomaly"> ArchiveAnomaly</label><br>
+              <input type="checkbox" id="SuspiciousArchiveEntry" name="SuspiciousArchiveEntry" value="SuspiciousArchiveEntry">
+              <label for="SuspiciousArchiveEntry"> SuspiciousArchiveEntry</label><br>
+              <input type="checkbox" id="SetupScript" name="SetupScript" value="SetupScript">
+              <label for="SetupScript"> SetupScript</label><br>
+              <input type="checkbox" id="Wheel" name="Wheel" value="Wheel">
+              <label for="Wheel"> Wheel</label><br>
+            </td>
+            <td><!-- metadata-->
+              <input type="checkbox" id="DataProcessing" name="DataProcessing" value="DataProcessing">
+              <label for="DataProcessing"> DataProcessing</label><br>
+              <input type="checkbox" id="FileStats" name="FileStats" value="FileStats">
+              <label for="FileStats"> FileStats</label><br>
+              <input type="checkbox" id="ASTAnalysisError" name="ASTAnalysisError" value="ASTAnalysisError">
+              <label for="ASTAnalysisError"> ASTAnalysisError</label><br>
+              <input type="checkbox" id="ASTParseError" name="ASTParseError" value="ASTParseError">
+              <label for="ASTParseError"> ASTParseError</label><br>
+            </td>
+            <td><!-- pattern match-->
+              <input type="checkbox" id="FunctionCall" name="FunctionCall" value="FunctionCall">
+              <label for="FunctionCall"> FunctionCall</label><br>
+              <input type="checkbox" id="SQLInjection" name="SQLInjection" value="SQLInjection">
+              <label for="SQLInjection"> SQLInjection</label><br>
+              <input type="checkbox" id="StringMatch" name="StringMatch" value="StringMatch">
+              <label for="StringMatch"> StringMatch</label><br>
+              <input type="checkbox" id="YaraMatch" name="YaraMatch" value="YaraMatch">
+              <label for="YaraMatch"> YaraMatch</label><br>
+              <input type="checkbox" id="YaraError" name="YaraError" value="YaraError">
+              <label for="YaraError"> YaraError</label><br>
+            </td>
+            <td><!-- other-->
+              <input type="checkbox" id="CryptoKeyGeneration" name="CryptoKeyGeneration" value="CryptoKeyGeneration">
+              <label for="CryptoKeyGeneration"> CryptoKeyGeneration</label><br>
+              <input type="checkbox" id="Detection" name="Detection" value="Detection">
+              <label for="Detection"> Detection</label><br>
+              <input type="checkbox" id="MalformedXML" name="MalformedXML" value="MalformedXML">
+              <label for="MalformedXML"> MalformedXML</label><br>
+              <input type="checkbox" id="TaintAnomaly" name="TaintAnomaly" value="TaintAnomaly">
+              <label for="TaintAnomaly"> TaintAnomaly</label><br>
+              <input type="checkbox" id="Misc" name="Misc" value="Misc">
+              <label for="Misc"> Misc</label><br>
+            </td>
+          </tr>
+          <tr>
+            <td colspan=6 align="center">
+              <input type="submit" value="Update">
+            </td>
+          </tr>
+        </table>
+        
+      </form>
+    </div>
     <div id="toolbar"></div>
     <table
       id="table"
+      data-toggle="true"
+      data-toolbar="#toolbar"
+      data-search="true"
+      data-show-columns="true"
+      data-pagination="true"
+      data-height="250">
+    </table>
+    <table
+      id="loc-table"
       data-toggle="true"
       data-toolbar="#toolbar"
       data-search="true"
