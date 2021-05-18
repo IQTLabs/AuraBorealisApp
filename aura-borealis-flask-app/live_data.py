@@ -1,6 +1,10 @@
 """
 This file loads live Aura data
 """
+
+import scipy.stats
+
+
 from elasticsearch import Elasticsearch, RequestsHttpConnection
 from es.elastic.api import connect
 from elasticsearch_dsl import Search, A
@@ -145,35 +149,57 @@ def get_all_warnings_x(warning_type, all_warnings):
     print(all_warnings)
 
 
-'''
-def get_all_warnings(warning_type, all_warnings):
-	"""
-	get all the warnings for a warning_type across all packages
 
-	Arguments
-	---------
-	warning_type : the Aura warning type you care about
-	all_warnings : a dictionary of all warnings, grouped by package, to be modified by this function
-	"""
 
-	conn = connect(host=HOST)
-	curs = conn.cursor()
+def get_all_scores():
+    """
+    processes the entire database to collect raw severity scores for all packages
+    meant to be called once at the load of the app, because this takes a while...maybe it should be cached?
 
-	curs.execute(
-		"select package, type, severity, score, line, line_no from aura_detections where type='" + warning_type + "'" + DEBUG
-	)
-	for row in curs:
-		package = row[0]
-		warning_type = row[1]
-		severity = row[2] 
-		score = row[3]
-		line = row[4]
-		line_no = row[5]
+    Returns
+    ---------
+    a list of all severity scores
+    """
 
-		if package not in all_warnings.keys():
-			all_warnings[package] = []
-		all_warnings[package].append({'warning_type':warning_type, 'severity':severity, 'score':score, 'line':line, 'line_no':line_no})
-'''
+    conn = connect(host=HOST)
+    curs = conn.cursor()
+
+
+    curs.execute(
+        "select package from aura_detections limit 1000000" 
+    )
+    packages = {}
+    for row in curs:
+        if row[0] not in packages.keys():
+            packages[row[0]] = 0
+    for package in packages.keys():
+        curs.execute(
+            "select score from aura_detections where package='" + package + "'" 
+        )
+        total = 0
+        for row in curs:
+            total += row[0]
+        packages[package] = total
+
+    return list(packages.values())
+
+def get_score_percentiles(array, score):
+    """
+    returns the percentile severity score of a score
+
+    Arguments
+    ---------
+    array : a list of all scores of all packages in the database
+    score : the score you want converted to a percentile using that array
+
+    Returns
+    ---------
+    the score converted to a percent between 0 and 100
+    """
+
+    return int(scipy.stats.percentileofscore(array, score) / 10) 
+
+
 def get_package_score(package):
 	"""
 	gets the severity score for a package
@@ -198,6 +224,7 @@ def get_package_score(package):
 	for row in curs:
 		score += int(row[0])
 	return score
+
 
 def get_all_warnings_counts_x(warning_type, all_warnings, all_unique_warnings, all_severities):
     client = Elasticsearch(host=HOST)
@@ -228,7 +255,7 @@ def get_all_warnings_counts_x(warning_type, all_warnings, all_unique_warnings, a
         all_severities[hit.package] += int(hit.score)
 
 
-def get_all_warnings_counts(warning_type, all_warnings, all_unique_warnings, all_severities):
+def get_all_warnings_counts(warning_type, all_warnings, all_unique_warnings, all_severities, all_raw_scores):
 	"""
 	get all the warnings for a warning_type
 
@@ -265,7 +292,7 @@ def get_all_warnings_counts(warning_type, all_warnings, all_unique_warnings, all
 
 		if package not in all_severities.keys():
 			all_severities[package] = 0
-		all_severities[package] += int(score)
+		all_severities[package] += get_score_percentiles(all_raw_scores, int(score))
 
 
 def connect_and_load_default(warning_types):
