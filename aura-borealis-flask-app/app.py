@@ -442,7 +442,7 @@ def autocomplete(inp):
 if __name__ == '__main__':
         print("Initializing App Data")
         tic = time.perf_counter()
-        #sum_warning_count_init()
+        sum_warning_count_init()
         unique_packages = get_unique_package_list()
         toc = time.perf_counter()
         print(f"App data initialized -  {toc - tic:0.4f} seconds")

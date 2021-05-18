@@ -47,7 +47,7 @@ def get_unique_package_list():
     ):
         unique_packages.append(b.key.unique_packages)
 
-    #print(unique_packages)
+    print(len(unique_packages))
     return unique_packages
 
     #s = Search(using=client).params(request_timeout=30)
@@ -325,14 +325,14 @@ def iterate_distinct_field(fieldname, pagesize=250, **kwargs):
             break
 
 def get_unique_warnings():
-    res = iterate_distinct_field(fieldname="severity.keyword", index="aura_detections")
+    res = iterate_distinct_field(fieldname="severity.keyword", index="production-logs-2021.04.09")
     for result in res:
         print(result)
     return res
 
-#if __name__ == '__main__':
-    #get_unique_warnings()
-    #all_warnings = {}
-    #get_all_warnings_x('SensitiveFile', all_warnings) 
-    #get_unique_package_list()
+if __name__ == '__main__':
+    get_unique_warnings()
+    all_warnings = {}
+    get_all_warnings_x('SensitiveFile', all_warnings) 
+    get_unique_package_list()
   
