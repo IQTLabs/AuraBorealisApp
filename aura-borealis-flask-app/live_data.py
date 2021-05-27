@@ -7,13 +7,15 @@ import scipy.stats
 
 from elasticsearch import Elasticsearch, RequestsHttpConnection
 from es.elastic.api import connect
-from elasticsearch_dsl import Search, A
+from elasticsearch_dsl import Search, A, Q
 #from requests_aws4auth import AWS4Auth
 
 #HOST = '192.168.68.9'
-HOST = 'localhost'
-#HOST = 'vpc-auradata-gvykpxgobffy7eomi2q7hmqbma.us-east-1.es.amazonaws.com'
+#HOST = 'localhost'
+HOST = 'vpc-auradata2-2b3s6lmtpt2wcb6ytkjd2y5yau.us-east-1.es.amazonaws.com'
 DEBUG = " limit 100"
+
+unique_packages = []
 
 def scan_aggs(search, source_aggs, inner_aggs={}, size=10):
     """
@@ -44,7 +46,7 @@ def get_unique_package_list():
     client = Elasticsearch(host=HOST)
     #client = Elasticsearch(host='vpc-auradata-gvykpxgobffy7eomi2q7hmqbma.us-east-1.es.amazonaws.com')
 
-    unique_packages = []
+    #unique_packages = []
     for b in scan_aggs(
         Search(using=client),
         {"unique_packages": A("terms", field="package.keyword")}
@@ -65,56 +67,99 @@ def get_unique_package_list():
         #print(type(hit))
         #print(hit)
 
-def get_warnings_by_package(package, warning, severity, package_warnings):
-	"""
-	get all the warnings for a specific package
+ #init_all_severities
+    #'kayobe': [{'warning_type': 'LeakingSecret', 'severity': 'critical', 'score': 0, 'line': "mock_getpass.return_value = 'test-pass'", 'line_no': 65}, {'warning_type': 'LeakingSecret', 'severity': 'critical', 'score': 0, 'line': "mock_getpass.return_value = 'test-pass'", 'line_no': 65}], 'karton-core': [{'warning_type': 'LeakingSecret', 'severity': 'critical', 'score': 0, 'line': 'minio_secret_key = "minioadmin"', 'line_no': 40}]
 
-	Arguments
-	---------
-	package : the package you want warnings for (do not specify a version for now)
-	warning : the Aura warning types you care about
-	severity : the severity level you care about
-	package_warnings : the dict this function will update
-	"""
-	conn = connect(host=HOST)
-	curs = conn.cursor()
-
-	curs.execute(
-			    "select count(*) from aura_detections where package='" + package + "' and type='" + warning + "' and severity='" + severity + "' and tags.keyword != 'test_code'"
-		)
-	for row in curs:
-		if warning not in package_warnings.keys():
-			package_warnings[warning] = {}
-		package_warnings[warning][severity] = row[0]
+# for get_warnings_by_package, package_warnings should look like {'FunctionCall':{'critical':3, 'low':2}, 'ModuleImport':{'high':11, 'low':0}}
 
 
-def get_LOC_by_warning(package, warning, severity):
-	"""
-	get all the LOC for a specific package and warning and severity
+def get_warnings_by_package(package_name, warning, severity, package_warnings):
+    client = Elasticsearch(host=HOST)
+    s = Search(using=client)
+    s = s.source(['package', 'type', 'severity', 'score'])
+    q = Q("match", type=warning)  & Q("match", severity=severity) 
+    s = s.query("match", package__keyword=package_name)
+    s = s.exclude("match", tag="test_code")
+    print(s.to_dict())
+    #package_warnings = {}
+    for hit in s.scan():
+        #print(hit.type)
+        #print(hit.severity)
+        #print(hit.package)
+        if warning not in package_warnings.keys():
+              package_warnings[warning] = {}
+        if severity in package_warnings[warning]:
+              package_warnings[warning][severity] += 1
+        else:
+              package_warnings[warning][severity] = 0
 
-	Arguments
-	---------
-	package : the package you want warnings for (do not specify a version)
-	warning : the Aura warning types you care about
-	severity : the severity level you care about.
+    #print(package_warnings)
+    #return package_warnings
 
-	Returns
-	---------
-	warnings : a list of lines of code tuples
-	"""
-	conn = connect(host=HOST)
-	curs = conn.cursor()
+#def get_warnings_by_package(package, warning, severity, package_warnings, init_all_severities, init_all_warnings):
+#	"""
+#	get all the warnings for a specific package
+#
+#	Arguments
+#	---------
+#	package : the package you want warnings for (do not specify a version for now)
+#	warning : the Aura warning types you care about
+#	severity : the severity level you care about
+#	package_warnings : the dict this function will update
+#        """
+#        all_pkg_sevs = init_all_severities.get(package)
+#        all_pkg_warns = init_all_severities.get(package)
+#        print(all_pkg_sevs)
+#        print(all_pkg_warns)
 
-	print("select line, line_no, location from aura_detections where package='" + package + "' and type='" + warning + "' and severity='" + severity + "'  and tags.keyword != 'test_code'")
-	curs.execute(
-			    "select line, line_no, location from aura_detections where package='" + package + "' and type='" + warning + "' and severity='" + severity + "'  and tags.keyword != 'test_code'"
-		)
-	results = []
-	for row in curs:
-		print("in ruc")
-		print(row[0])
-		results.append([row[0], row[1], row[2]])
-	return results
+# [['import network', 137, '..../path/file1.py'], ['x = "password"', 5878, '..../path/file2.py']]
+def get_LOC_by_warning(package_name, warning, severity):
+#	"""
+#	get all the LOC for a specific package and warning and severity
+
+#	Arguments
+#	---------
+#	package : the package you want warnings for (do not specify a version)
+#	warning : the Aura warning types you care about
+#	severity : the severity level you care about.
+
+#	Returns
+#	---------
+#	warnings : a list of lines of code tuples
+#	"""
+        client = Elasticsearch(host=HOST)
+        s = Search(using=client)
+        s = s.source(['package', 'type', 'severity', 'score', 'line', 'line_no', 'location'])
+        q = Q("match", type=warning)  & Q("match", severity=severity)
+        s = s.query("match", package__keyword=package_name)
+        s = s.exclude("match", tag="test_code")
+        print(s.to_dict())
+        results = []
+        for hit in s.scan():
+            if not hasattr(hit, "line"):
+               hit.line = None
+            if not hasattr(hit, "line_no"):
+               hit.line_no = None
+            if not hasattr(hit, "location"):
+               hit.location = None
+            print(hit.to_dict())
+            results.append([hit.line, hit.line_no, hit.location])
+        print(results)
+        return results
+
+	#conn = connect(host=HOST)
+	#curs = conn.cursor()
+
+	#print("select line, line_no, location from lambda-s3-file-index  where package='" + package + "' and type='" + warning + "' and severity='" + severity + "'  and tags.keyword != 'test_code'")
+	#curs.execute(
+	#		    "select line, line_no, location from lambda-s3-file-index  where package='" + package + "' and type='" + warning + "' and severity='" + severity + "'  and tags.keyword != 'test_code'"
+	#	)
+	#results = []
+	#for row in curs:
+	#	print("in ruc")
+	#	print(row[0])
+	#	results.append([row[0], row[1], row[2]])
+	#return results
 
 # http://192.168.68.9:5601/app/kibana#/discover?_g=(filters:!(),refreshInterval:(pause:!t,value:0),time:(from:now-1y,to:now))&_a=(columns:!(_source),filters:!(),index:'30bc7830-7530-11eb-870c-ad2473be90c7',interval:auto,query:(language:kuery,query:''),sort:!())
 
@@ -151,7 +196,7 @@ def get_all_warnings_x(warning_type, all_warnings):
 
 
 
-def get_all_scores():
+def get_all_scores(init_all_severities, unique_packages):
     """
     processes the entire database to collect raw severity scores for all packages
     meant to be called once at the load of the app, because this takes a while...maybe it should be cached?
@@ -165,22 +210,27 @@ def get_all_scores():
     curs = conn.cursor()
 
 
-    curs.execute(
-        "select package from aura_detections limit 1000000" 
-    )
+    #curs.execute(
+    #    "select package from lambda-s3-file-index limit 1000000" 
+    #)
     packages = {}
-    for row in curs:
-        if row[0] not in packages.keys():
-            packages[row[0]] = 0
-    for package in packages.keys():
-        curs.execute(
-            "select score from aura_detections where package='" + package + "'" 
-        )
+    #for row in curs:
+    #    if row[0] not in packages.keys():
+    #        packages[row[0]] = 0
+
+    #init_all_severities
+    #'kayobe': [{'warning_type': 'LeakingSecret', 'severity': 'critical', 'score': 0, 'line': "mock_getpass.return_value = 'test-pass'", 'line_no': 65}, {'warning_type': 'LeakingSecret', 'severity': 'critical', 'score': 0, 'line': "mock_getpass.return_value = 'test-pass'", 'line_no': 65}], 'karton-core': [{'warning_type': 'LeakingSecret', 'severity': 'critical', 'score': 0, 'line': 'minio_secret_key = "minioadmin"', 'line_no': 40}]
+
+    for package in unique_packages:
         total = 0
-        for row in curs:
-            total += row[0]
+        all_pkg_sevs = init_all_severities.get(package)
+        if all_pkg_sevs:
+           for pkg in all_pkg_sevs:
+               total += pkg.get("score")
+
         packages[package] = total
 
+    print(packages)
     return list(packages.values())
 
 def get_score_percentiles(array, score):
@@ -200,31 +250,25 @@ def get_score_percentiles(array, score):
     return int(scipy.stats.percentileofscore(array, score) / 10) 
 
 
-def get_package_score(package):
-	"""
-	gets the severity score for a package
+def get_package_score(package, init_all_severities):
+        """
+        gets the severity score for a package
 
-	Arguments
-	---------
-	package : the package you care about
+        Arguments
+        ---------
+        package : the package you care about
 
-	Returns
-	---------
-	score : a positive integer, the sum of all the severitiy scores of all warnings for this package
-	"""
+        Returns
+        ---------
+        score : a positive integer, the sum of all the severitiy scores of all warnings for this package
+        """
 
-	conn = connect(host=HOST)
-	curs = conn.cursor()
-
-	curs.execute(
-		"select score from aura_detections where package='" + package + "' and tags.keyword != 'test_code'" 
-	)
-
-	score = 0
-	for row in curs:
-		score += int(row[0])
-	return score
-
+        score = 0
+        all_sevs = init_all_severities.get(package)
+        if all_sevs:
+           for sev in all_sevs:
+               score += int(sev["score"])
+        return score
 
 def get_all_warnings_counts_x(warning_type, all_warnings, all_unique_warnings, all_severities):
     client = Elasticsearch(host=HOST)
@@ -271,7 +315,7 @@ def get_all_warnings_counts(warning_type, all_warnings, all_unique_warnings, all
 	curs = conn.cursor()
 
 	curs.execute(
-		"select package, type, severity, score from aura_detections where type='" + warning_type + "'" + DEBUG
+		"select package, type, severity, score from lambda-s3-file-index  where type='" + warning_type + "'" + DEBUG
 	)
 
 	for row in curs:
@@ -352,14 +396,18 @@ def iterate_distinct_field(fieldname, pagesize=250, **kwargs):
             break
 
 def get_unique_warnings():
-    res = iterate_distinct_field(fieldname="severity.keyword", index="production-logs-2021.04.09")
+    res = iterate_distinct_field(fieldname="severity.keyword", index="lambda-s3-file-index")
     for result in res:
         print(result)
     return res
 
-if __name__ == '__main__':
-    get_unique_warnings()
-    all_warnings = {}
-    get_all_warnings_x('SensitiveFile', all_warnings) 
-    get_unique_package_list()
+#if __name__ == '__main__':
+    #get_LOC_by_warning('support', 'ModuleImport', 'unknown')
+    #get_warnings_by_package()
+    #get_unique_package_list()
+    #get_all_scores()
+    #get_unique_warnings()
+    #all_warnings = {}
+    #get_all_warnings_x('SensitiveFile', all_warnings) 
+    #get_unique_package_list()
   

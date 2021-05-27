@@ -7,21 +7,23 @@ from search import PackageSearch
 import os
 SECRET_KEY = os.urandom(32)
 
-from live_data import connect_and_load_default, get_all_warnings_counts, get_warnings_by_package, get_LOC_by_warning
-from live_data import get_package_score, get_score_percentiles, get_all_scores
+#from live_data import connect_and_load_default, get_all_warnings_counts, get_warnings_by_package, get_LOC_by_warning
+#from live_data import get_package_score, get_score_percentiles, get_all_scores
+from live_data import *
 
 from dummy_data import *
 
 unique_packages = []
+all_raw_scores = []
 
 # hand select certain packages and warnings for demo purposes
 PACKAGES = ['requests', 'network', 'pycurl', 'pandas', 'boto', 'sqlint', 'ssh-python', 'sqlmap', 
 		'netlogger', 'streamlit', 'pillow', 'huggingface']
-
-WARNING_TYPES = ['LeakingSecret', 'SuspiciousFile', 'SQLInjection', 'SensitiveFile', 'SetupScript', 'FunctionCall', 'ModuleImport',
-		'Base64Blob', 'Binwalk', 'CryptoKeyGeneration', 'DataProcessing', 'Detection', 'InvalidRequirement', 'MalformedXML',
-		'ArchiveAnomaly', 'SuspiciousArchiveEntry', 'OutdatedPackage', 'UnpinnedPackage', 'TaintAnomaly', 'Wheel', 'StringMatch',
-		'FileStats', 'YaraMatch', 'YaraError', 'ASTAnalysisError', 'ASTParseError', 'Misc']
+WARNING_TYPES = ['LeakingSecret' ]
+#WARNING_TYPES = ['LeakingSecret', 'SuspiciousFile', 'SQLInjection', 'SensitiveFile', 'SetupScript', 'FunctionCall', 
+#		'Base64Blob', 'Binwalk', 'CryptoKeyGeneration', 'DataProcessing', 'Detection', 'InvalidRequirement', 'MalformedXML',
+#		'ArchiveAnomaly', 'SuspiciousArchiveEntry', 'OutdatedPackage', 'UnpinnedPackage', 'TaintAnomaly', 'Wheel', 'StringMatch',
+#		'FileStats', 'YaraMatch', 'YaraError', 'ASTAnalysisError', 'ASTParseError', 'Misc']
 
 SEVERITIES = ['critical', 'severe', 'moderate', 'low', 'unknown']
 
@@ -106,7 +108,7 @@ def sum_warning_count_init():
 
 @app.route('/')
 def home():
-	print(get_score_percentiles(all_raw_scores, 5))
+	#print(get_score_percentiles(all_raw_scores, 5))
 	return render_template('./home.html')
 
 @app.route('/about/')
@@ -161,11 +163,11 @@ def top_warnings():
 # display all the packages by their overall severity scores, total warnings, and total unique warnings
 @app.route('/sum_warning_count/', methods=['GET', 'POST'])
 def sum_warning_count():
-	all_warnings = {}
-	all_unique_warnings = {}
-	all_severities = {}
-	for warning_type in WARNING_TYPES:
-		get_all_warnings_counts(warning_type, all_warnings, all_unique_warnings, all_severities, all_raw_scores)
+	#all_warnings = {}
+	#all_unique_warnings = {}
+	#all_severities = {}
+	#for warning_type in WARNING_TYPES:
+	#	get_all_warnings_counts_x(warning_type, all_warnings, all_unique_warnings, all_severities, all_raw_scores)
 
 
 	all_unique_warnings_summed = {}
@@ -315,8 +317,8 @@ def comparison():
 		package1 = "pykalman"
 		package2 = "gps-helper-cs"
 
-	score1 = get_score_percentiles(all_raw_scores, get_package_score(package1))
-	score2 = get_score_percentiles(all_raw_scores, get_package_score(package2))
+	score1 = get_score_percentiles(all_raw_scores, get_package_score(package1, init_all_severities))
+	score2 = get_score_percentiles(all_raw_scores, get_package_score(package2, init_all_severities))
 
 	data = []
 	data.append({"package1": score1,"package2": score2,"warning_type": "OVERALL SEVERITY"})
@@ -370,47 +372,56 @@ def comparison():
 # display warning information for a single package
 @app.route('/single_package/', methods=['GET', 'POST'])
 def single_package():
+     warning_types_selected = []
+     if request.method == 'POST':
+        warning_types_selected = get_user_selected_warnings(request)
+     else:
+        warning_types_selected = WARNING_TYPES
 
-	warning_types_selected = []
-	if request.method == 'POST':
-		warning_types_selected = get_user_selected_warnings(request)
-	else:
-		warning_types_selected = WARNING_TYPES
+     package = request.args.get('package')
+     if package == None:
+        if request.method == "POST":
+            package = request.form['package']
+            print(package)
+        else:
+            package = 'gps-helper-cs'
+     score = get_score_percentiles(all_raw_scores, get_package_score(package, init_all_severities))
+     print(score)
+     count_warnings = {}
+        
+     for severity in SEVERITIES:
+        for warning_type in warning_types_selected:
+            print(package)
+            print(warning_type)
+            print(severity)
+        
+            get_warnings_by_package(package, warning_type, severity, count_warnings)
 
-	package = request.args.get('package')
-	if package == None:
-                if request.method == "POST":
-                    package = request.form['package']
-                else:
-                    package = 'gps-helper-cs'
+     print(count_warnings)
 
-	score = get_score_percentiles(all_raw_scores, get_package_score(package))
+     data = []
+     cleaned_locs = []
+     for warning_type in warning_types_selected:
+         entry = {}
+         entry["warning_type"] = "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#" + warning_type.lower() + "' target='_blank'>" + warning_type + "</a>"
+         found_non_empty = False
+         for severity in SEVERITIES:
+             if count_warnings[warning_type][severity] != 0:
+                found_non_empty = True
+                entry[severity] = '<a href="/loc?package=' + package + '&warning=' + warning_type + '&severity=' + severity + '" target="_blank">' + str(count_warnings[warning_type][severity]) + '</a>' 
+             else:
+                entry[severity] = 0
+             LOCs = get_LOC_by_warning(package, warning_type, severity)
+             for loc in LOCs:
+                 print(loc)
+                 if loc[2] is None:
+                    cleaned_locs.append({'warning_type':warning_type, 'severity':severity, 'line':loc[1], 'code':loc[0], 'filename':loc[2]})
+                 else:   
+                    cleaned_locs.append({'warning_type':warning_type, 'severity':severity, 'line':loc[1], 'code':loc[0], 'filename':loc[2].split('$')[1]})
+         if found_non_empty:
+            data.append(entry)
 
-	count_warnings = {}
-	for severity in SEVERITIES:
-		for warning_type in warning_types_selected:
-			 get_warnings_by_package(package, warning_type, severity, count_warnings)
-
-	data = []
-	cleaned_locs = []
-	for warning_type in warning_types_selected:
-		entry = {}
-		entry["warning_type"] = "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#" + warning_type.lower() + "' target='_blank'>" + warning_type + "</a>"
-		found_non_empty = False
-		for severity in SEVERITIES:
-			if count_warnings[warning_type][severity] != 0:
-				found_non_empty = True
-				entry[severity] = '<a href="/loc?package=' + package + '&warning=' + warning_type + '&severity=' + severity + '" target="_blank">' + str(count_warnings[warning_type][severity]) + '</a>' 
-			else:
-				entry[severity] = 0
-
-			LOCs = get_LOC_by_warning(package, warning_type, severity)
-			for loc in LOCs:
-				cleaned_locs.append({'warning_type':warning_type, 'severity':severity, 'line':loc[1], 'code':loc[0], 'filename':loc[2].split('$')[1]})
-		if found_non_empty:
-			data.append(entry)
-
-	loc_columns = [
+     loc_columns = [
 	 {
 		"field": "warning_type",
 		"title": "indicator type",
@@ -438,7 +449,7 @@ def single_package():
 		},
 	]
 
-	columns = [
+     columns = [
 	 {
 		"field": "warning_type",
 		"title": "indicator type",
@@ -471,7 +482,7 @@ def single_package():
 		},
 	]
 
-	return render_template("single_package.html",
+     return render_template("single_package.html",
 		data=data,
 		columns=columns,
 		title='Aura Borealis',
@@ -501,6 +512,13 @@ if __name__ == '__main__':
         tic = time.perf_counter()
         sum_warning_count_init()
         unique_packages = get_unique_package_list()
+        print(unique_packages)
+        print("*********** WARNINGS ***************")
+        print(init_all_warnings)
+        print("*********** SEVERITIES ***************")
+        print(init_all_severities)
+
+        all_raw_scores = get_all_scores(init_all_severities, unique_packages)
         toc = time.perf_counter()
         print(f"App data initialized -  {toc - tic:0.4f} seconds")
         app.run(host='0.0.0.0', debug=True, port=7000)
