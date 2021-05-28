@@ -166,6 +166,7 @@
           </tr>
           <tr>
             <td colspan=6 align="center">
+              <input type="hidden" id="package" name="package" value="none">
               <input type="submit" value="Update">
             </td>
           </tr>
@@ -193,5 +194,8 @@
       data-height="500">
     </table>
   </div>
+  <script>
+    document.getElementById("package").value=pack;
+  </script>
 </body>
 </html>

@@ -2,6 +2,8 @@ from flask import Flask, render_template, request, make_response, jsonify
 from flask_datepicker import datepicker
 import json
 import time
+import pickle
+import random
 
 from search import PackageSearch
 import os
@@ -19,11 +21,11 @@ all_raw_scores = []
 # hand select certain packages and warnings for demo purposes
 PACKAGES = ['requests', 'network', 'pycurl', 'pandas', 'boto', 'sqlint', 'ssh-python', 'sqlmap', 
 		'netlogger', 'streamlit', 'pillow', 'huggingface']
-WARNING_TYPES = ['LeakingSecret' ]
-#WARNING_TYPES = ['LeakingSecret', 'SuspiciousFile', 'SQLInjection', 'SensitiveFile', 'SetupScript', 'FunctionCall', 
-#		'Base64Blob', 'Binwalk', 'CryptoKeyGeneration', 'DataProcessing', 'Detection', 'InvalidRequirement', 'MalformedXML',
-#		'ArchiveAnomaly', 'SuspiciousArchiveEntry', 'OutdatedPackage', 'UnpinnedPackage', 'TaintAnomaly', 'Wheel', 'StringMatch',
-#		'FileStats', 'YaraMatch', 'YaraError', 'ASTAnalysisError', 'ASTParseError', 'Misc']
+#WARNING_TYPES = ['LeakingSecret' ]
+WARNING_TYPES = ['LeakingSecret', 'SuspiciousFile', 'SQLInjection', 'SensitiveFile', 'SetupScript', 'FunctionCall', 
+		'Base64Blob', 'Binwalk', 'CryptoKeyGeneration', 'DataProcessing', 'Detection', 'InvalidRequirement', 'MalformedXML',
+		'ArchiveAnomaly', 'SuspiciousArchiveEntry', 'OutdatedPackage', 'UnpinnedPackage', 'TaintAnomaly', 'Wheel', 'StringMatch',
+		'FileStats', 'YaraMatch', 'YaraError', 'ASTAnalysisError', 'ASTParseError', 'Misc']
 
 SEVERITIES = ['critical', 'severe', 'moderate', 'low', 'unknown']
 
@@ -99,12 +101,10 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = SECRET_KEY
 datepicker(app)
 
-init_all_warnings = {}
-init_all_unique_warnings = {}
-init_all_severities = {}
-def sum_warning_count_init():
-        for warning_type in WARNING_TYPES:
-                get_all_warnings_counts_x(warning_type, init_all_warnings, init_all_unique_warnings, init_all_severities)
+
+def sum_warning_count_init(init_all_warnings, init_all_unique_warnings, init_all_severities):
+		for warning_type in WARNING_TYPES:
+				get_all_warnings_counts_x(warning_type, init_all_warnings, init_all_unique_warnings, init_all_severities)
 
 @app.route('/')
 def home():
@@ -201,14 +201,18 @@ def sum_warning_count():
 	]
 
 	data = []
-	for package in init_all_severities.keys():
+	for package in list(init_all_severities.keys()):
 		entry = {"package": "<a href='/single_package?package=" + package + "'>" + package + "</a>"}
 		entry['total_warnings_count'] = init_all_warnings[package]
 		entry['unique_warnings_count'] = all_unique_warnings_summed[package]
-		entry['severity_rating'] = init_all_severities[package]
+		entry['severity_rating'] = 0
+		#print("init_all_percentiles", list(init_all_percentiles.values())[:5])
+		if package in init_all_percentiles.keys():
+			entry['severity_rating'] = init_all_percentiles[package]
 		data.append(entry)
 
 	#data = getDummyData('sum_warning_count')
+	print("rendering")
 
 	return render_template("sum_warning_count.html",
 		data=data,
@@ -317,8 +321,8 @@ def comparison():
 		package1 = "pykalman"
 		package2 = "gps-helper-cs"
 
-	score1 = get_score_percentiles(all_raw_scores, get_package_score(package1, init_all_severities))
-	score2 = get_score_percentiles(all_raw_scores, get_package_score(package2, init_all_severities))
+	score1 = init_all_percentiles[package1]
+	score2 = init_all_percentiles[package1]
 
 	data = []
 	data.append({"package1": score1,"package2": score2,"warning_type": "OVERALL SEVERITY"})
@@ -372,57 +376,57 @@ def comparison():
 # display warning information for a single package
 @app.route('/single_package/', methods=['GET', 'POST'])
 def single_package():
-     warning_types_selected = []
-     if request.method == 'POST':
-        warning_types_selected = get_user_selected_warnings(request)
-     else:
-        warning_types_selected = WARNING_TYPES
+	warning_types_selected = []
+	if request.method == 'POST':
+		warning_types_selected = get_user_selected_warnings(request)
+	else:
+		warning_types_selected = WARNING_TYPES
 
-     package = request.args.get('package')
-     if package == None:
-        if request.method == "POST":
-            package = request.form['package']
-            print(package)
-        else:
-            package = 'gps-helper-cs'
-     score = get_score_percentiles(all_raw_scores, get_package_score(package, init_all_severities))
-     print(score)
-     count_warnings = {}
-        
-     for severity in SEVERITIES:
-        for warning_type in warning_types_selected:
-            print(package)
-            print(warning_type)
-            print(severity)
-        
-            get_warnings_by_package(package, warning_type, severity, count_warnings)
+	package = request.args.get('package')
+	if package == None:
+		if request.method == "POST":
+			package = request.form['package']
+			print(package)
+		else:
+			package = 'gps-helper-cs'
+	score = init_all_percentiles[package]
+	print(score)
+	count_warnings = {}
+		
+	for severity in SEVERITIES:
+		for warning_type in warning_types_selected:
+			print(package)
+			print(warning_type)
+			print(severity)
+		
+			get_warnings_by_package(package, warning_type, severity, count_warnings)
 
-     print(count_warnings)
+	print(count_warnings)
 
-     data = []
-     cleaned_locs = []
-     for warning_type in warning_types_selected:
-         entry = {}
-         entry["warning_type"] = "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#" + warning_type.lower() + "' target='_blank'>" + warning_type + "</a>"
-         found_non_empty = False
-         for severity in SEVERITIES:
-             if count_warnings[warning_type][severity] != 0:
-                found_non_empty = True
-                entry[severity] = '<a href="/loc?package=' + package + '&warning=' + warning_type + '&severity=' + severity + '" target="_blank">' + str(count_warnings[warning_type][severity]) + '</a>' 
-             else:
-                entry[severity] = 0
-             LOCs = get_LOC_by_warning(package, warning_type, severity)
-             for loc in LOCs:
-                 print(loc)
-                 if loc[2] is None:
-                    cleaned_locs.append({'warning_type':warning_type, 'severity':severity, 'line':loc[1], 'code':loc[0], 'filename':loc[2]})
-                 else:   
-                    cleaned_locs.append({'warning_type':warning_type, 'severity':severity, 'line':loc[1], 'code':loc[0], 'filename':loc[2].split('$')[1]})
-         if found_non_empty:
-            data.append(entry)
+	data = []
+	cleaned_locs = []
+	for warning_type in warning_types_selected:
+		entry = {}
+		entry["warning_type"] = "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#" + warning_type.lower() + "' target='_blank'>" + warning_type + "</a>"
+		found_non_empty = False
+		for severity in SEVERITIES:
+			if count_warnings[warning_type][severity] != 0:
+				found_non_empty = True
+				entry[severity] = '<a href="/loc?package=' + package + '&warning=' + warning_type + '&severity=' + severity + '" target="_blank">' + str(count_warnings[warning_type][severity]) + '</a>' 
+			else:
+				entry[severity] = 0
+			LOCs = get_LOC_by_warning(package, warning_type, severity)
+			for loc in LOCs:
+				print(loc)
+				if loc[2] is None:
+					cleaned_locs.append({'warning_type':warning_type, 'severity':severity, 'line':loc[1], 'code':loc[0], 'filename':loc[2]})
+				else:   
+					cleaned_locs.append({'warning_type':warning_type, 'severity':severity, 'line':loc[1], 'code':loc[0], 'filename':loc[2].split('$')[1]})
+		if found_non_empty:
+			data.append(entry)
 
-     loc_columns = [
-	 {
+	loc_columns = [
+	{
 		"field": "warning_type",
 		"title": "indicator type",
 		"sortable": True,
@@ -449,8 +453,8 @@ def single_package():
 		},
 	]
 
-     columns = [
-	 {
+	columns = [
+	{
 		"field": "warning_type",
 		"title": "indicator type",
 		"sortable": True,
@@ -482,7 +486,7 @@ def single_package():
 		},
 	]
 
-     return render_template("single_package.html",
+	return render_template("single_package.html",
 		data=data,
 		columns=columns,
 		title='Aura Borealis',
@@ -493,33 +497,82 @@ def single_package():
 
 @app.route('/autocomplete/<inp>', methods=['GET'])
 def autocomplete(inp):
-    pkg_list = []
-    #print(unique_packages)
-    #unique_packages = get_unique_package_list()
-    #for pkg in unique_packages:
-    #    pkg_list.extend(map(lambda st: st.strip(), map(lambda s: str(s), pkg.split(','))))
-    filtered=filter(lambda ing: ing.startswith(inp),set(unique_packages))
-    #print(list(filtered))
-    return jsonify({"listaing":list(filtered)})
-    #return make_response({"listaing":list(filtered)}, 200)
+	pkg_list = []
+	#print(unique_packages)
+	#unique_packages = get_unique_package_list()
+	#for pkg in unique_packages:
+	#	pkg_list.extend(map(lambda st: st.strip(), map(lambda s: str(s), pkg.split(','))))
+	filtered=filter(lambda ing: ing.startswith(inp),set(unique_packages))
+	#print(list(filtered))
+	return jsonify({"listaing":list(filtered)})
+	#return make_response({"listaing":list(filtered)}, 200)
 
 # #########################################################################################################
 # MAIN
 # #########################################################################################################
 
-if __name__ == '__main__':
-        print("Initializing App Data")
-        tic = time.perf_counter()
-        sum_warning_count_init()
-        unique_packages = get_unique_package_list()
-        print(unique_packages)
-        print("*********** WARNINGS ***************")
-        print(init_all_warnings)
-        print("*********** SEVERITIES ***************")
-        print(init_all_severities)
+def cacheData(data, name):
+	with open(name + '.pickle', 'wb') as handle:
+	  pickle.dump(data, handle, protocol=pickle.HIGHEST_PROTOCOL)
+	print("Printed to " + name + ".pickle")
 
-        all_raw_scores = get_all_scores(init_all_severities, unique_packages)
-        toc = time.perf_counter()
-        print(f"App data initialized -  {toc - tic:0.4f} seconds")
-        app.run(host='0.0.0.0', debug=True, port=7000)
+def loadData(name):
+	infile = open(name+".pickle",'rb')
+	data = pickle.load(infile)
+	infile.close()
+	return data
+
+if __name__ == '__main__':
+		print("Initializing App Data")
+		'''tic = time.perf_counter()
+		init_all_warnings = {}
+		init_all_unique_warnings = {}
+		init_all_severities = {}
+		sum_warning_count_init(init_all_warnings, init_all_unique_warnings, init_all_severities)
+		unique_packages = get_unique_package_list()
+		print(unique_packages[:10])
+		print("*********** WARNINGS ***************")
+		print(init_all_warnings)
+		print("*********** UNIQUE WARNINGS ***************")
+		print(init_all_unique_warnings)
+		print("*********** SEVERITIES ***************")
+		print(init_all_severities)
+		cacheData(unique_packages, 'unique_packages')
+		cacheData(init_all_warnings, 'init_all_warnings')
+		cacheData(init_all_unique_warnings, 'init_all_unique_warnings')
+		cacheData(init_all_severities, 'init_all_severities')
+		init_all_percentiles = {}
+		for p in unique_packages:
+			if p in  init_all_severities.keys():
+				init_all_percentiles[p] = get_score_percentiles(init_all_severities.values(), init_all_severities[p])
+			else:
+				init_all_percentiles[p] = 0
+
+		cacheData(init_all_percentiles, 'init_all_percentiles')
+		print('init_all_percentiles', init_all_percentiles)
+
+
+		'''
+
+		unique_packages = list(loadData('unique_packages'))
+		print('unique_packages', list(unique_packages))
+		init_all_warnings = loadData('init_all_warnings')
+		#print('init_all_warnings', init_all_warnings)
+		init_all_unique_warnings = loadData('init_all_unique_warnings')
+		#print('init_all_unique_warnings', init_all_unique_warnings)
+		init_all_severities = loadData('init_all_severities')
+		for k in init_all_severities.keys():
+			init_all_severities[k] = random.randint(0, 8000)
+		#print('init_all_severities', init_all_severities)
+
+
+		init_all_percentiles = loadData('init_all_percentiles')
+		print('init_all_percentiles', init_all_percentiles)
+
+
+
+		all_raw_scores = init_all_severities
+		#toc = time.perf_counter()
+		#print(f"App data initialized -  {toc - tic:0.4f} seconds")
+		app.run(host='0.0.0.0', debug=True, port=7000)
 

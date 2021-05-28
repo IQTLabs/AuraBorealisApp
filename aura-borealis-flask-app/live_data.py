@@ -246,29 +246,8 @@ def get_score_percentiles(array, score):
     ---------
     the score converted to a percent between 0 and 100
     """
-
+    array = list(array)
     return int(scipy.stats.percentileofscore(array, score) / 10) 
-
-
-def get_package_score(package, init_all_severities):
-        """
-        gets the severity score for a package
-
-        Arguments
-        ---------
-        package : the package you care about
-
-        Returns
-        ---------
-        score : a positive integer, the sum of all the severitiy scores of all warnings for this package
-        """
-
-        score = 0
-        all_sevs = init_all_severities.get(package)
-        if all_sevs:
-           for sev in all_sevs:
-               score += int(sev["score"])
-        return score
 
 def get_all_warnings_counts_x(warning_type, all_warnings, all_unique_warnings, all_severities):
     client = Elasticsearch(host=HOST)
