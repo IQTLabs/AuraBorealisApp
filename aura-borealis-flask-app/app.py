@@ -2,6 +2,10 @@ from flask import Flask, render_template, request, make_response, jsonify
 from flask_datepicker import datepicker
 import json
 import time
+import pickle
+import os.path
+import urllib.parse as urlparse
+from urllib.parse import parse_qs
 
 from search import PackageSearch
 import os
@@ -19,11 +23,11 @@ all_raw_scores = []
 # hand select certain packages and warnings for demo purposes
 PACKAGES = ['requests', 'network', 'pycurl', 'pandas', 'boto', 'sqlint', 'ssh-python', 'sqlmap', 
 		'netlogger', 'streamlit', 'pillow', 'huggingface']
-WARNING_TYPES = ['LeakingSecret' ]
-#WARNING_TYPES = ['LeakingSecret', 'SuspiciousFile', 'SQLInjection', 'SensitiveFile', 'SetupScript', 'FunctionCall', 
-#		'Base64Blob', 'Binwalk', 'CryptoKeyGeneration', 'DataProcessing', 'Detection', 'InvalidRequirement', 'MalformedXML',
-#		'ArchiveAnomaly', 'SuspiciousArchiveEntry', 'OutdatedPackage', 'UnpinnedPackage', 'TaintAnomaly', 'Wheel', 'StringMatch',
-#		'FileStats', 'YaraMatch', 'YaraError', 'ASTAnalysisError', 'ASTParseError', 'Misc']
+#WARNING_TYPES = ['LeakingSecret' ]
+WARNING_TYPES = ['LeakingSecret', 'SuspiciousFile', 'SQLInjection', 'SensitiveFile', 'SetupScript', 'FunctionCall', 
+		'Base64Blob', 'Binwalk', 'CryptoKeyGeneration', 'DataProcessing', 'Detection', 'InvalidRequirement', 'MalformedXML',
+		'ArchiveAnomaly', 'SuspiciousArchiveEntry', 'OutdatedPackage', 'UnpinnedPackage', 'TaintAnomaly', 'Wheel', 'StringMatch',
+		'FileStats', 'YaraMatch', 'YaraError', 'ASTAnalysisError', 'ASTParseError', 'Misc']
 
 SEVERITIES = ['critical', 'severe', 'moderate', 'low', 'unknown']
 
@@ -102,9 +106,9 @@ datepicker(app)
 init_all_warnings = {}
 init_all_unique_warnings = {}
 init_all_severities = {}
-def sum_warning_count_init():
+def sum_warning_count_init(all_raw_scores):
         for warning_type in WARNING_TYPES:
-                get_all_warnings_counts_x(warning_type, init_all_warnings, init_all_unique_warnings, init_all_severities)
+                get_all_warnings_counts_x(warning_type, init_all_warnings, init_all_unique_warnings, init_all_severities,all_raw_scores)
 
 @app.route('/')
 def home():
@@ -372,13 +376,15 @@ def comparison():
 # display warning information for a single package
 @app.route('/single_package/', methods=['GET', 'POST'])
 def single_package():
+     package = request.args.get('package')
+     print(package)
      warning_types_selected = []
      if request.method == 'POST':
         warning_types_selected = get_user_selected_warnings(request)
      else:
         warning_types_selected = WARNING_TYPES
 
-     package = request.args.get('package')
+     #package = request.args.get('package')
      if package == None:
         if request.method == "POST":
             package = request.form['package']
@@ -510,16 +516,38 @@ def autocomplete(inp):
 if __name__ == '__main__':
         print("Initializing App Data")
         tic = time.perf_counter()
-        sum_warning_count_init()
+        print("Getting All Scores")
+        infile = open("all-raw-scores1",'rb')
+        all_raw_scores = pickle.load(infile)
+        infile.close()
+        print("Getting sum of all warning counts")
+        outfile1 = open("init-all-severities",'wb')
+        outfile2 = open("init-all-warnings",'wb')
+        outfile3 = open("init-all-unique-warnings",'wb')
+        sum_warning_count_init(all_raw_scores)
+        pickle.dump(init_all_severities,outfile1)
+        pickle.dump(init_all_warnings, outfile2)
+        pickle.dump(init_all_unique_warnings, outfile3)
+        outfile1.close()
+        outfile2.close()
+        outfile3.close()
+        print("Getting unique package list")
         unique_packages = get_unique_package_list()
-        print(unique_packages)
-        print("*********** WARNINGS ***************")
-        print(init_all_warnings)
-        print("*********** SEVERITIES ***************")
-        print(init_all_severities)
-
-        all_raw_scores = get_all_scores(init_all_severities, unique_packages)
+        #print(unique_packages)
+        #print("*********** WARNINGS ***************")
+        #print(init_all_warnings)
+        #print("*********** SEVERITIES ***************")
+        #print(init_all_severities)
+        #print("Getting All Scores")
+        #infile = open("all-raw-scores1",'rb')
+        #all_raw_scores = pickle.load(infile)
+        #infile.close()
+        #all_raw_scores = get_all_scores(unique_packages)
+        #outfile = open("all-raw-scores1",'wb')
+        #all_raw_scores = get_all_scores(unique_packages)
+        #pickle.dump(all_raw_scores,outfile)
+        #outfile.close()
         toc = time.perf_counter()
         print(f"App data initialized -  {toc - tic:0.4f} seconds")
-        app.run(host='0.0.0.0', debug=True, port=7000)
+        app.run(host='0.0.0.0', debug=True, port=5000)
 

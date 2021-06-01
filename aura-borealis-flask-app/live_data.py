@@ -194,9 +194,26 @@ def get_all_warnings_x(warning_type, all_warnings):
     print(all_warnings)
 
 
+def get_all_scores_x():
+    packages = {}
+    client = Elasticsearch(host=HOST)
+
+    s = Search(using=client)
+    s = s.source(['score'])
+    s = s.query("match", package="12306-booking")
+    s = s.exclude("match", tag="test_code")
+    s = s[:0]
+    s.aggs.metric('total_score', 'sum', field='score')
 
 
-def get_all_scores(init_all_severities, unique_packages):
+    response = s.execute()
+    print(response.aggregations.total_score.value)
+    #print(s.aggs['per_score'])
+    #print(s.hits.total)
+    #print(s.aggs['per_score'].buckets)
+    #print(response.to_dict())
+
+def get_all_scores(unique_packages):
     """
     processes the entire database to collect raw severity scores for all packages
     meant to be called once at the load of the app, because this takes a while...maybe it should be cached?
@@ -206,29 +223,26 @@ def get_all_scores(init_all_severities, unique_packages):
     a list of all severity scores
     """
 
-    conn = connect(host=HOST)
-    curs = conn.cursor()
-
-
-    #curs.execute(
-    #    "select package from lambda-s3-file-index limit 1000000" 
-    #)
     packages = {}
-    #for row in curs:
-    #    if row[0] not in packages.keys():
-    #        packages[row[0]] = 0
-
-    #init_all_severities
-    #'kayobe': [{'warning_type': 'LeakingSecret', 'severity': 'critical', 'score': 0, 'line': "mock_getpass.return_value = 'test-pass'", 'line_no': 65}, {'warning_type': 'LeakingSecret', 'severity': 'critical', 'score': 0, 'line': "mock_getpass.return_value = 'test-pass'", 'line_no': 65}], 'karton-core': [{'warning_type': 'LeakingSecret', 'severity': 'critical', 'score': 0, 'line': 'minio_secret_key = "minioadmin"', 'line_no': 40}]
+    client = Elasticsearch(host=HOST)
 
     for package in unique_packages:
+        #print(package)
         total = 0
-        all_pkg_sevs = init_all_severities.get(package)
-        if all_pkg_sevs:
-           for pkg in all_pkg_sevs:
-               total += pkg.get("score")
+        s = Search(using=client)
+        s = s.source(['score'])
+        s = s.query("match", package=package)
+        s = s.exclude("match", tag="test_code")
+        s = s[:0]
+        s.aggs.metric('total_score', 'sum', field='score')
+        response = s.execute()
+        print(response.aggregations.total_score.value)
 
-        packages[package] = total
+        #for hit in s.scan():
+            #total += int(hit.score)
+        #print(total)
+
+        packages[package] = response.aggregations.total_score.value
 
     print(packages)
     return list(packages.values())
@@ -263,14 +277,28 @@ def get_package_score(package, init_all_severities):
         score : a positive integer, the sum of all the severitiy scores of all warnings for this package
         """
 
-        score = 0
-        all_sevs = init_all_severities.get(package)
-        if all_sevs:
-           for sev in all_sevs:
-               score += int(sev["score"])
-        return score
+        client = Elasticsearch(host=HOST)
 
-def get_all_warnings_counts_x(warning_type, all_warnings, all_unique_warnings, all_severities):
+        s = Search(using=client)
+        s = s.source(['score'])
+        s = s.query("match", package=package)
+        s = s.exclude("match", tag="test_code")
+        s = s[:0]
+        s.aggs.metric('total_score', 'sum', field='score')
+
+
+        response = s.execute()
+        print(response.aggregations.total_score.value)
+
+        return response.aggregations.total_score.value
+        #score = 0
+        #all_sevs = init_all_severities.get(package)
+        #if all_sevs:
+        #   for sev in all_sevs:
+        #       score += int(sev["score"])
+        #return score
+
+def get_all_warnings_counts_x(warning_type, all_warnings, all_unique_warnings, all_severities, all_raw_scores):
     client = Elasticsearch(host=HOST)
     s = Search(using=client).params(request_timeout=30)
     s = s.source(['package', 'type', 'severity', 'score'])
@@ -280,6 +308,7 @@ def get_all_warnings_counts_x(warning_type, all_warnings, all_unique_warnings, a
 
     for hit in s.scan():
         #print(hit)
+        #print(hit.score)
         if not hasattr(hit, "severity"):
             hit.severity = None
         if not hasattr(hit, "score"):
@@ -296,7 +325,7 @@ def get_all_warnings_counts_x(warning_type, all_warnings, all_unique_warnings, a
 
         if hit.package not in all_severities.keys():
                         all_severities[hit.package] = 0
-        all_severities[hit.package] += int(hit.score)
+        all_severities[hit.package] += get_score_percentiles(all_raw_scores, int(hit.score))
 
 
 def get_all_warnings_counts(warning_type, all_warnings, all_unique_warnings, all_severities, all_raw_scores):
@@ -402,6 +431,7 @@ def get_unique_warnings():
     return res
 
 #if __name__ == '__main__':
+    #get_all_scores_x()
     #get_LOC_by_warning('support', 'ModuleImport', 'unknown')
     #get_warnings_by_package()
     #get_unique_package_list()
