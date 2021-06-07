@@ -22,12 +22,17 @@ all_raw_scores = []
 PACKAGES = ['requests', 'network', 'pycurl', 'pandas', 'boto', 'sqlint', 'ssh-python', 'sqlmap', 
 		'netlogger', 'streamlit', 'pillow', 'huggingface']
 #WARNING_TYPES = ['LeakingSecret' ]
-WARNING_TYPES = ['LeakingSecret', 'SuspiciousFile', 'SQLInjection', 'SensitiveFile', 'SetupScript', 'FunctionCall', 
-		'Base64Blob', 'Binwalk', 'CryptoKeyGeneration', 'DataProcessing', 'Detection', 'InvalidRequirement', 'MalformedXML',
-		'ArchiveAnomaly', 'SuspiciousArchiveEntry', 'OutdatedPackage', 'UnpinnedPackage', 'TaintAnomaly', 'Wheel', 'StringMatch',
-		'FileStats', 'YaraMatch', 'YaraError', 'ASTAnalysisError', 'ASTParseError', 'Misc']
 
-SEVERITIES = ['critical', 'severe', 'moderate', 'low', 'unknown']
+WARNING_TYPES = ['LeakingSecret', 'ModuleImport', 'SuspiciousFile', 'OutdatedPackage', 'UnpinnedPackage',' Base64Blob',
+      'Binwalk', 'InvalidRequirement', 'ArchiveAnomaly', 'SuspiciousArchiveEntry', 'SetupScript', 'Wheel',  
+      'DataProcessing', 'FileStats', 'ASTAnalysisError', 'ASTParseError', 'FunctionCall', 'SQLInjection',
+      'StringMatch', 'YaraMatch', 'YaraError', 'CryptoKeyGeneration', 'Detection', 'MalformedXML', 'TaintAnomaly',
+      'Misc']
+
+
+
+
+SEVERITIES = ['critical', 'high', 'moderate', 'low', 'unknown']
 
 
 def get_user_selected_warnings(request):
@@ -104,7 +109,7 @@ datepicker(app)
 
 def sum_warning_count_init(init_all_warnings, init_all_unique_warnings, init_all_severities):
 		for warning_type in WARNING_TYPES:
-				get_all_warnings_counts_x(warning_type, init_all_warnings, init_all_unique_warnings, init_all_severities)
+				get_all_warnings_counts_x(warning_type, init_all_warnings, init_all_unique_warnings, init_all_severities, all_raw_scores)
 
 @app.route('/')
 def home():
@@ -124,10 +129,18 @@ def top_warnings():
 	if request.method == 'POST':
 		warning_types_selected = get_user_selected_warnings(request)
 		dict_packages = connect_and_load_default(set(warning_types_selected))
+		checked = {}
+		for type_w in warning_types_selected:
+			checked[type_w] = True
 
 	else:
 		warning_types_selected = ['LeakingSecret']
-		dict_packages = connect_and_load_default(warning_types_selected)
+		checked = {'LeakingSecret':True}
+
+		# load the default packge from a cached version to increase speed
+		#dict_packages = connect_and_load_default(warning_types_selected)
+		#cacheData(dict_packages, 'dict_packages_default_LeakingSecret')
+		dict_packages = loadData('dict_packages_default_LeakingSecret')
 
 	data = []
 	for package in dict_packages.keys():
@@ -158,7 +171,8 @@ def top_warnings():
 	return render_template("top_warnings.html",
 		data=data,
 		columns=columns,
-		title='Aura Borealis')
+		title='Aura Borealis',
+		checked=checked)
 
 # display all the packages by their overall severity scores, total warnings, and total unique warnings
 @app.route('/sum_warning_count/', methods=['GET', 'POST'])
@@ -210,9 +224,6 @@ def sum_warning_count():
 		if package in init_all_percentiles.keys():
 			entry['severity_rating'] = init_all_percentiles[package]
 		data.append(entry)
-
-	#data = getDummyData('sum_warning_count')
-	print("rendering")
 
 	return render_template("sum_warning_count.html",
 		data=data,
@@ -293,7 +304,6 @@ def loc():
 
 	data = []
 	for loc in LOCs:
-		print(loc)
 		data.append({'line':loc[1], 'code':loc[0], 'filename':loc[2].split('$')[1]})
 
 	return render_template("loc.html",
@@ -329,18 +339,18 @@ def comparison():
 
 	package1_warnings = {}
 	package2_warnings = {}
-	for warning_type in WARNING_TYPES:
-		for severity in SEVERITIES:
-			get_warnings_by_package(package1, warning_type, severity, package1_warnings)
-			get_warnings_by_package(package2, warning_type, severity, package2_warnings)
+	get_warnings_by_package(package1, package1_warnings)
+	get_warnings_by_package(package2, package2_warnings)
 
 
 	for warning_type in WARNING_TYPES:
 		p1_sum = 0
 		p2_sum = 0
 		for severity in SEVERITIES:
-			p1_sum += package1_warnings[warning_type][severity]
-			p2_sum += package2_warnings[warning_type][severity]
+			if warning_type in package1_warnings.keys() and severity in package1_warnings[warning_type].keys():
+				p1_sum += package1_warnings[warning_type][severity]
+			if warning_type in package2_warnings.keys() and severity in package2_warnings[warning_type].keys():
+				p2_sum += package2_warnings[warning_type][severity]
 		if p1_sum != 0:
 			p1_sum = '<a href="/loc?package=' + package1 + '&warning=' + warning_type + '&severity=ALL">' + str(p1_sum) + '</a>'
 		if p2_sum != 0:
@@ -376,54 +386,72 @@ def comparison():
 # display warning information for a single package
 @app.route('/single_package/', methods=['GET', 'POST'])
 def single_package():
+
 	warning_types_selected = []
+	checked = {}
 	if request.method == 'POST':
 		warning_types_selected = get_user_selected_warnings(request)
-	else:
+		for type_w in warning_types_selected:
+			checked[type_w] = True
+	
+	if len(warning_types_selected) == 0:
 		warning_types_selected = WARNING_TYPES
 
 	package = request.args.get('package')
 	if package == None:
 		if request.method == "POST":
 			package = request.form['package']
-			print(package)
 		else:
 			package = 'gps-helper-cs'
 	score = init_all_percentiles[package]
-	print(score)
 	count_warnings = {}
 		
-	for severity in SEVERITIES:
-		for warning_type in warning_types_selected:
-			print(package)
-			print(warning_type)
-			print(severity)
-		
-			get_warnings_by_package(package, warning_type, severity, count_warnings)
-
-	print(count_warnings)
+	get_warnings_by_package(package, count_warnings)
 
 	data = []
-	cleaned_locs = []
+	LOCs = get_LOC_by_warning(package)
 	for warning_type in warning_types_selected:
-		entry = {}
-		entry["warning_type"] = "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#" + warning_type.lower() + "' target='_blank'>" + warning_type + "</a>"
-		found_non_empty = False
 		for severity in SEVERITIES:
-			if count_warnings[warning_type][severity] != 0:
-				found_non_empty = True
-				entry[severity] = '<a href="/loc?package=' + package + '&warning=' + warning_type + '&severity=' + severity + '" target="_blank">' + str(count_warnings[warning_type][severity]) + '</a>' 
-			else:
-				entry[severity] = 0
-			LOCs = get_LOC_by_warning(package, warning_type, severity)
+			cleaned_locs = []
 			for loc in LOCs:
-				print(loc)
 				if loc[2] is None:
 					cleaned_locs.append({'warning_type':warning_type, 'severity':severity, 'line':loc[1], 'code':loc[0], 'filename':loc[2]})
 				else:   
 					cleaned_locs.append({'warning_type':warning_type, 'severity':severity, 'line':loc[1], 'code':loc[0], 'filename':loc[2].split('$')[1]})
-		if found_non_empty:
-			data.append(entry)
+
+	entries = {}
+	for loc in LOCs:
+		warning_type = loc[3]
+		severity = loc[4]
+		if warning_type not in entries.keys():
+			entries[warning_type] = {}
+			entries[warning_type]['label'] = "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#" + warning_type.lower() + "' target='_blank'>" + warning_type + "</a>"
+		if severity in entries[warning_type].keys():
+			entries[warning_type][severity]['count'] += 1
+		else:
+			entries[warning_type][severity] = {}
+			entries[warning_type][severity]['count'] = 1
+
+	data = []
+	for warning_type in entries.keys():
+		if warning_type in warning_types_selected:
+			row = {}
+			row['warning_type'] = "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#" + warning_type.lower() + "' target='_blank'>" + warning_type + "</a>"
+			for severity in SEVERITIES:
+				if severity in entries[warning_type].keys(): 
+					row[severity] = entries[warning_type][severity]['count']
+				else:
+					row[severity] = 0
+
+			data.append(row)
+
+	cleaned_locs = []
+	LOCs = get_LOC_by_warning(package)
+	for loc in LOCs:
+		if loc[2] is None and loc[3] in warning_types_selected:
+			cleaned_locs.append({'warning_type':entries[loc[3]]['label'], 'severity':loc[4], 'line':loc[1], 'code':loc[0], 'filename':loc[2]})
+		elif loc[3] in warning_types_selected:   
+			cleaned_locs.append({'warning_type':entries[loc[3]]['label'], 'severity':loc[4], 'line':loc[1], 'code':loc[0], 'filename':loc[2].split('$')[1]})
 
 	loc_columns = [
 	{
@@ -465,8 +493,8 @@ def single_package():
 		"sortable": True,
 		},
 		{
-		"field": "severe",
-		"title": "severe",
+		"field": "high",
+		"title": "high",
 		"sortable": True,
 		},
 		{
@@ -493,7 +521,8 @@ def single_package():
 		package=package,
 		score=score,
 		data_cleaned_locs=cleaned_locs,
-		loc_columns=loc_columns)
+		loc_columns=loc_columns,
+		checked=checked)
 
 @app.route('/autocomplete/<inp>', methods=['GET'])
 def autocomplete(inp):
@@ -524,6 +553,7 @@ def loadData(name):
 
 if __name__ == '__main__':
 		print("Initializing App Data")
+		
 		'''tic = time.perf_counter()
 		init_all_warnings = {}
 		init_all_unique_warnings = {}
@@ -541,35 +571,22 @@ if __name__ == '__main__':
 		cacheData(init_all_warnings, 'init_all_warnings')
 		cacheData(init_all_unique_warnings, 'init_all_unique_warnings')
 		cacheData(init_all_severities, 'init_all_severities')
-		init_all_percentiles = {}
-		for p in unique_packages:
-			if p in  init_all_severities.keys():
-				init_all_percentiles[p] = get_score_percentiles(init_all_severities.values(), init_all_severities[p])
-			else:
-				init_all_percentiles[p] = 0
-
 		cacheData(init_all_percentiles, 'init_all_percentiles')
-		print('init_all_percentiles', init_all_percentiles)
+		print('init_all_percentiles', init_all_percentiles)'''
 
 
-		'''
+		
 
 		unique_packages = list(loadData('unique_packages'))
-		print('unique_packages', list(unique_packages))
+		#print('unique_packages', list(unique_packages))
 		init_all_warnings = loadData('init_all_warnings')
 		#print('init_all_warnings', init_all_warnings)
 		init_all_unique_warnings = loadData('init_all_unique_warnings')
 		#print('init_all_unique_warnings', init_all_unique_warnings)
 		init_all_severities = loadData('init_all_severities')
-		for k in init_all_severities.keys():
-			init_all_severities[k] = random.randint(0, 8000)
 		#print('init_all_severities', init_all_severities)
-
-
 		init_all_percentiles = loadData('init_all_percentiles')
-		print('init_all_percentiles', init_all_percentiles)
-
-
+		#print('init_all_percentiles', init_all_percentiles)
 
 		all_raw_scores = init_all_severities
 		#toc = time.perf_counter()

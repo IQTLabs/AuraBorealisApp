@@ -19,6 +19,34 @@
       display: inline-block;
     }
   </style>
+<style>
+/* Tooltip container */
+.tooltip {
+  position: relative;
+  display: inline-block;
+  border-bottom: 1px dotted black; /* If you want dots under the hoverable text */
+}
+
+/* Tooltip text */
+.tooltip .tooltiptext {
+  visibility: visible;
+  width: 120px;
+  background-color: black;
+  color: #fff;
+  text-align: center;
+  padding: 5px 0;
+  border-radius: 6px;
+ 
+  /* Position the tooltip text - see examples below! */
+  position: absolute;
+  z-index: 1;
+}
+
+/* Show the tooltip text when you mouse over the tooltip container */
+.tooltip:hover .tooltiptext {
+  visibility: visible;
+}
+</style>
   <link rel="stylesheet"
         href="https://cdnjs.cloudflare.com/ajax/libs/font-
         awesome/4.7.0/css/font-awesome.min.css">
@@ -42,7 +70,10 @@
 <body>
   <div class="container" style="padding: 10px; ">
         <img src="/static/logo.png">
-	<h3 class="logo">List all packages by total indicator count and <a href={{ url_for('static', filename='severity_score_info.html') }} target="_blank">severity score<a></h1>
+	<h3 class="logo">List all packages by total indicator count and </h3>
+<div class="tooltip">Hover over me
+  <span class="tooltiptext">Tooltip text</span>
+</div>
         <a href="/">back to menu</a>
     <br/>
     <div id="toolbar"></div>
