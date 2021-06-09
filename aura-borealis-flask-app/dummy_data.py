@@ -15,6 +15,7 @@ diff_dates_data = [
             {"package": "<a href='/single_package?package=netlogger'>netlogger</a>","num_changes": 0,"num_changes_unique": 0, 'changes_score':'none'},
     ]
 
+'''
 def getComparisonDummyData(packs):
     packs = sorted(packs)
     if packs[0] == "boto__1_0" and packs[1] == "requests__2_3":
@@ -112,6 +113,7 @@ def getComparisonDummyData(packs):
                 {"package1": 0,"package2": 0,"warning_type": "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#misc'>Misc</a>"},
         ]
     return data
+'''
 
 def getDummyData(label, package=None):
     if label == 'diff_dates':
