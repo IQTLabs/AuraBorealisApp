@@ -204,7 +204,6 @@ def get_all_scores_x():
     s = s[:0]
     s.aggs.metric('total_score', 'sum', field='score')
 
-
     response = s.execute()
     #print(response.aggregations.total_score.value)
     #print(s.aggs['per_score'])
@@ -234,6 +233,7 @@ def get_all_scores(unique_packages):
         s = s[:0]
         s.aggs.metric('total_score', 'sum', field='score')
         response = s.execute()
+
         #print(response.aggregations.total_score.value)
 
         #for hit in s.scan():
@@ -279,7 +279,6 @@ def get_package_score(package, init_all_severities):
         s = s.exclude("match", tag="test_code")
         s = s[:0]
         s.aggs.metric('total_score', 'sum', field='score')
-
 
         response = s.execute()
         #print(response.aggregations.total_score.value)

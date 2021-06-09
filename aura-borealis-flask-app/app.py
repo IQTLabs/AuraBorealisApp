@@ -1,36 +1,24 @@
 from flask import Flask, render_template, request, make_response, jsonify
 from flask_datepicker import datepicker
+
 import json
 import time
 import pickle
-import random
 
 from search import PackageSearch
 import os
 SECRET_KEY = os.urandom(32)
 
-#from live_data import connect_and_load_default, get_all_warnings_counts, get_warnings_by_package, get_LOC_by_warning
-#from live_data import get_package_score, get_score_percentiles, get_all_scores
 from live_data import *
-
 from dummy_data import *
 
 unique_packages = []
 all_raw_scores = []
 
-# hand select certain packages and warnings for demo purposes
-PACKAGES = ['requests', 'network', 'pycurl', 'pandas', 'boto', 'sqlint', 'ssh-python', 'sqlmap', 
-		'netlogger', 'streamlit', 'pillow', 'huggingface']
-#WARNING_TYPES = ['LeakingSecret' ]
-
-WARNING_TYPES = ['LeakingSecret', 'ModuleImport', 'SuspiciousFile', 'OutdatedPackage', 'UnpinnedPackage',' Base64Blob',
-      'Binwalk', 'InvalidRequirement', 'ArchiveAnomaly', 'SuspiciousArchiveEntry', 'SetupScript', 'Wheel',  
-      'DataProcessing', 'FileStats', 'ASTAnalysisError', 'ASTParseError', 'FunctionCall', 'SQLInjection',
-      'StringMatch', 'YaraMatch', 'YaraError', 'CryptoKeyGeneration', 'Detection', 'MalformedXML', 'TaintAnomaly',
-      'Misc']
-
-
-
+WARNING_TYPES = ['LeakingSecret', 'SuspiciousFile', 'SQLInjection', 'SensitiveFile', 'SetupScript', 'FunctionCall', 
+		'Base64Blob', 'Binwalk', 'CryptoKeyGeneration', 'DataProcessing', 'Detection', 'InvalidRequirement', 'MalformedXML',
+		'ArchiveAnomaly', 'SuspiciousArchiveEntry', 'OutdatedPackage', 'UnpinnedPackage', 'TaintAnomaly', 'Wheel', 'StringMatch',
+		'FileStats', 'YaraMatch', 'YaraError', 'ASTAnalysisError', 'ASTParseError', 'Misc']
 
 SEVERITIES = ['critical', 'high', 'moderate', 'low', 'unknown']
 
@@ -106,14 +94,12 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = SECRET_KEY
 datepicker(app)
 
-
 def sum_warning_count_init(init_all_warnings, init_all_unique_warnings, init_all_severities):
 		for warning_type in WARNING_TYPES:
 				get_all_warnings_counts_x(warning_type, init_all_warnings, init_all_unique_warnings, init_all_severities, all_raw_scores)
-
+        
 @app.route('/')
 def home():
-	#print(get_score_percentiles(all_raw_scores, 5))
 	return render_template('./home.html')
 
 @app.route('/about/')
@@ -123,7 +109,7 @@ def about():
 # Display all packages with the highest number of warnings (uses live data)
 @app.route('/top_warnings/', methods=['GET', 'POST'])
 def top_warnings():
-	# load the live Aura data
+
 	warning_types_selected = []
 
 	if request.method == 'POST':
@@ -138,13 +124,10 @@ def top_warnings():
 		checked = {'LeakingSecret':True}
 
 		# load the default packge from a cached version to increase speed
-		#dict_packages = connect_and_load_default(warning_types_selected)
-		#cacheData(dict_packages, 'dict_packages_default_LeakingSecret')
 		dict_packages = loadData('dict_packages_default_LeakingSecret')
 
 	data = []
 	for package in dict_packages.keys():
-		#print('processing', package)
 		entry = {}
 		entry['package'] = "<a href='/single_package?package=" + package +"'>" + package +"</a>"
 		warning_counts = {}
@@ -153,13 +136,13 @@ def top_warnings():
 				warning_counts[warning['warning_type']] = 1
 			else:
 				warning_counts[warning['warning_type']] += 1
-		#print('warning_counts', warning_counts)
+
 		for warning_type in warning_types_selected:
 			if warning_type in warning_counts.keys():
 				entry[warning_type.lower()] = warning_counts[warning_type]
 			else:
 				entry[warning_type.lower()] = 0
-		#print('entry', entry)
+
 		data.append(entry)
 
 	# other column settings -> http://bootstrap-table.wenzhixin.net.cn/documentation/#column-options
@@ -177,12 +160,6 @@ def top_warnings():
 # display all the packages by their overall severity scores, total warnings, and total unique warnings
 @app.route('/sum_warning_count/', methods=['GET', 'POST'])
 def sum_warning_count():
-	#all_warnings = {}
-	#all_unique_warnings = {}
-	#all_severities = {}
-	#for warning_type in WARNING_TYPES:
-	#	get_all_warnings_counts_x(warning_type, all_warnings, all_unique_warnings, all_severities, all_raw_scores)
-
 
 	all_unique_warnings_summed = {}
 	for package in init_all_unique_warnings.keys():
@@ -314,13 +291,10 @@ def loc():
 		warning=warning)
 
 # display a comparison between two packages, two versions, or a package and a benchmark profile
-# https://prismjs.com/#examples	<--- use this for hover over LOC TODO
-# http://inria.github.io/sparklificator/ <-- TODO
 @app.route('/comparison/', methods=['GET', 'POST'])
 def comparison():
 	search = PackageSearch(request.form)
 	if request.method == 'POST':
-		#return search_results(search)
 		package1 = request.form['package1']
 		package2 = request.form['package2']
 	else:
@@ -341,7 +315,6 @@ def comparison():
 	package2_warnings = {}
 	get_warnings_by_package(package1, package1_warnings)
 	get_warnings_by_package(package2, package2_warnings)
-
 
 	for warning_type in WARNING_TYPES:
 		p1_sum = 0
@@ -455,6 +428,7 @@ def single_package():
 
 	loc_columns = [
 	{
+
 		"field": "warning_type",
 		"title": "indicator type",
 		"sortable": True,
@@ -527,14 +501,8 @@ def single_package():
 @app.route('/autocomplete/<inp>', methods=['GET'])
 def autocomplete(inp):
 	pkg_list = []
-	#print(unique_packages)
-	#unique_packages = get_unique_package_list()
-	#for pkg in unique_packages:
-	#	pkg_list.extend(map(lambda st: st.strip(), map(lambda s: str(s), pkg.split(','))))
 	filtered=filter(lambda ing: ing.startswith(inp),set(unique_packages))
-	#print(list(filtered))
 	return jsonify({"listaing":list(filtered)})
-	#return make_response({"listaing":list(filtered)}, 200)
 
 # #########################################################################################################
 # MAIN
@@ -552,8 +520,10 @@ def loadData(name):
 	return data
 
 if __name__ == '__main__':
+
 		print("Initializing App Data")
 		
+    # uncomment code below to generate new DB caches
 		'''tic = time.perf_counter()
 		init_all_warnings = {}
 		init_all_unique_warnings = {}
@@ -574,22 +544,12 @@ if __name__ == '__main__':
 		cacheData(init_all_percentiles, 'init_all_percentiles')
 		print('init_all_percentiles', init_all_percentiles)'''
 
-
-		
-
 		unique_packages = list(loadData('unique_packages'))
-		#print('unique_packages', list(unique_packages))
 		init_all_warnings = loadData('init_all_warnings')
-		#print('init_all_warnings', init_all_warnings)
 		init_all_unique_warnings = loadData('init_all_unique_warnings')
-		#print('init_all_unique_warnings', init_all_unique_warnings)
 		init_all_severities = loadData('init_all_severities')
-		#print('init_all_severities', init_all_severities)
 		init_all_percentiles = loadData('init_all_percentiles')
-		#print('init_all_percentiles', init_all_percentiles)
 
 		all_raw_scores = init_all_severities
-		#toc = time.perf_counter()
-		#print(f"App data initialized -  {toc - tic:0.4f} seconds")
 		app.run(host='0.0.0.0', debug=True, port=7000)
 
