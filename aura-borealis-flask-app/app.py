@@ -1,16 +1,27 @@
-from flask import Flask, render_template, request, make_response, jsonify
-from flask_datepicker import datepicker
-
 import json
-import time
-import pickle
-
-from search import PackageSearch
 import os
-SECRET_KEY = os.urandom(32)
+import pickle
+import time
 
-from live_data import *
-from dummy_data import *
+from flask import Flask
+from flask import jsonify
+from flask import make_response
+from flask import render_template
+from flask import request
+
+from flask_datepicker import datepicker
+from search import PackageSearch
+
+from live_data import get_unique_package_list
+from live_data import get_warnings_by_package
+from live_data import get_LOC_by_warning
+from live_data import get_all_warnings_counts_x
+from live_data import connect_and_load_default
+from live_data import connect_and_load_default
+
+from dummy_data import getDummyData
+
+SECRET_KEY = os.urandom(32)
 
 unique_packages = []
 all_raw_scores = []
@@ -91,7 +102,7 @@ def get_user_selected_warnings(request):
 # #########################################################################################################
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = SECRET_KEY
+app.config['SECRET_KEY'] = SECRET_KEY # needed for encryption of session cookies
 datepicker(app)
 
 def sum_warning_count_init(init_all_warnings, init_all_unique_warnings, init_all_severities):
@@ -112,13 +123,14 @@ def top_warnings():
 
 	warning_types_selected = []
 
+	# if this isn't a new page load, get the selected warnings from POST
+	# otherwise default to LeakingSecret
 	if request.method == 'POST':
 		warning_types_selected = get_user_selected_warnings(request)
 		dict_packages = connect_and_load_default(set(warning_types_selected))
 		checked = {}
 		for type_w in warning_types_selected:
 			checked[type_w] = True
-
 	else:
 		warning_types_selected = ['LeakingSecret']
 		checked = {'LeakingSecret':True}
@@ -126,6 +138,7 @@ def top_warnings():
 		# load the default packge from a cached version to increase speed
 		dict_packages = loadData('dict_packages_default_LeakingSecret')
 
+	# prepare the results that will be displayed on the table for this page
 	data = []
 	for package in dict_packages.keys():
 		entry = {}
@@ -145,6 +158,7 @@ def top_warnings():
 
 		data.append(entry)
 
+	# prepare the column names that will be displayed on the table for this page
 	# other column settings -> http://bootstrap-table.wenzhixin.net.cn/documentation/#column-options
 	columns = []
 	columns.append({"field": "package", "title": "package", "sortable": True,})
@@ -161,6 +175,7 @@ def top_warnings():
 @app.route('/sum_warning_count/', methods=['GET', 'POST'])
 def sum_warning_count():
 
+	# calculate the number of unique warnings per package
 	all_unique_warnings_summed = {}
 	for package in init_all_unique_warnings.keys():
 		count = 0
@@ -191,13 +206,14 @@ def sum_warning_count():
 		}
 	]
 
+	# prepare the data to display on the table on this page
 	data = []
 	for package in list(init_all_severities.keys()):
 		entry = {"package": "<a href='/single_package?package=" + package + "'>" + package + "</a>"}
 		entry['total_warnings_count'] = init_all_warnings[package]
 		entry['unique_warnings_count'] = all_unique_warnings_summed[package]
 		entry['severity_rating'] = 0
-		#print("init_all_percentiles", list(init_all_percentiles.values())[:5])
+
 		if package in init_all_percentiles.keys():
 			entry['severity_rating'] = init_all_percentiles[package]
 		data.append(entry)
@@ -211,6 +227,9 @@ def sum_warning_count():
 # score between two dates 
 @app.route('/diff_dates/', methods=['GET', 'POST'])
 def diff_dates():
+
+	# if the user searches for a specific package by name
+	# TODO: fix this to be a proper comparison
 	search = PackageSearch(request.form)
 	if request.method == 'POST':
 		return search_results(search)
@@ -238,6 +257,7 @@ def diff_dates():
 		},
 	]
 
+	# TODO: fix this to be a live data pull across two different scan dates
 	data = getDummyData('diff_dates')
 
 	return render_template("diff_dates.html",
@@ -246,6 +266,7 @@ def diff_dates():
 		title='Aura Borealis',
 		form=search)
 
+"""
 # display all lines of code associated with a package, warnings, and severity
 @app.route('/loc/', methods=['GET', 'POST'])
 def loc():
@@ -289,10 +310,13 @@ def loc():
 		title='Aura Borealis',
 		package=package,
 		warning=warning)
+"""
 
 # display a comparison between two packages, two versions, or a package and a benchmark profile
 @app.route('/comparison/', methods=['GET', 'POST'])
 def comparison():
+
+	# get the two packages to compare from the request
 	search = PackageSearch(request.form)
 	if request.method == 'POST':
 		package1 = request.form['package1']
@@ -301,21 +325,22 @@ def comparison():
 		package1 = request.args.get('package1')
 		package2 = request.args.get('package2')
 
+	# if no packages were specified (first time page load), set it to load these defaults 
 	if package1 == None:
 		package1 = "pykalman"
 		package2 = "gps-helper-cs"
 
+	# collect the severity to display
+	data = []
 	score1 = init_all_percentiles[package1]
 	score2 = init_all_percentiles[package1]
-
-	data = []
 	data.append({"package1": score1,"package2": score2,"warning_type": "OVERALL SEVERITY"})
 
+	# collect the warning data to display
 	package1_warnings = {}
 	package2_warnings = {}
 	get_warnings_by_package(package1, package1_warnings)
 	get_warnings_by_package(package2, package2_warnings)
-
 	for warning_type in WARNING_TYPES:
 		p1_sum = 0
 		p2_sum = 0
@@ -508,11 +533,13 @@ def autocomplete(inp):
 # MAIN
 # #########################################################################################################
 
+# pickles the database -- used in main below, for example
 def cacheData(data, name):
 	with open(name + '.pickle', 'wb') as handle:
 	  pickle.dump(data, handle, protocol=pickle.HIGHEST_PROTOCOL)
 	print("Printed to " + name + ".pickle")
 
+# loads the cached pickled data
 def loadData(name):
 	infile = open(name+".pickle",'rb')
 	data = pickle.load(infile)
