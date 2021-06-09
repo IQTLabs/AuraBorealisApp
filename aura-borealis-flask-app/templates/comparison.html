@@ -97,7 +97,7 @@
 
     });
 
-    var packages = ['pandas__1_0', 'pandas__2_0', 'boto__1_0', 'requests__2_3', 'BENCHMARK_DATA_ANALYSIS', 'BENCHMARK_NETWORKING'];
+    var packages = {{packages|tojson}};
 
     function autocomplete(inp, arr) {
       /*the autocomplete function takes two arguments,

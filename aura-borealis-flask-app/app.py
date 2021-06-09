@@ -21,8 +21,6 @@ from live_data import connect_and_load_default
 
 from dummy_data import getDummyData
 
-SECRET_KEY = os.urandom(32)
-
 unique_packages = []
 all_raw_scores = []
 
@@ -102,7 +100,8 @@ def get_user_selected_warnings(request):
 # #########################################################################################################
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = SECRET_KEY # needed for encryption of session cookies
+SECRET_KEY = os.urandom(32) # needed for encryption of session cookies
+app.config['SECRET_KEY'] = SECRET_KEY 
 datepicker(app)
 
 def sum_warning_count_init(init_all_warnings, init_all_unique_warnings, init_all_severities):
@@ -266,52 +265,6 @@ def diff_dates():
 		title='Aura Borealis',
 		form=search)
 
-"""
-# display all lines of code associated with a package, warnings, and severity
-@app.route('/loc/', methods=['GET', 'POST'])
-def loc():
-	search = PackageSearch(request.form)
-	package = request.args.get('package')
-	warning = request.args.get('warning')
-	severity = request.args.get('severity')
-
-	if severity == 'ALL':
-		LOCs = []
-		for severity in SEVERITIES:
-			LOCs += get_LOC_by_warning(package, warning, severity)
-	else:
-		LOCs = get_LOC_by_warning(package, warning, severity)
-
-	columns = [
-		{
-		"field": "line", # which is the field's name of data key 
-		"title": "line with indicators", # display as the table header's name
-		"sortable": True,
-		},
-		{
-		"field": "code", # which is the field's name of data key 
-		"title": "source code", # display as the table header's name
-		"sortable": True,
-		},
-		{
-		"field": "filename", # which is the field's name of data key 
-		"title": "filename", # display as the table header's name
-		"sortable": True,
-		},
-	]
-
-	data = []
-	for loc in LOCs:
-		data.append({'line':loc[1], 'code':loc[0], 'filename':loc[2].split('$')[1]})
-
-	return render_template("loc.html",
-		data=data,
-		columns=columns,
-		title='Aura Borealis',
-		package=package,
-		warning=warning)
-"""
-
 # display a comparison between two packages, two versions, or a package and a benchmark profile
 @app.route('/comparison/', methods=['GET', 'POST'])
 def comparison():
@@ -379,7 +332,8 @@ def comparison():
 		title='Aura Borealis',
 		form=search,
 		package1=package1,
-		package2=package2)
+		package2=package2,
+		packages=unique_packages)
 
 # display warning information for a single package
 @app.route('/single_package/', methods=['GET', 'POST'])
