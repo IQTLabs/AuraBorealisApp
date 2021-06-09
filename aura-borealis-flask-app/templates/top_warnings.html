@@ -31,6 +31,7 @@
     $(window).load(function(){
       var data = {{data|tojson}};
       var columns = {{columns|tojson}};
+      
 
       $(function() {
         $('#table').bootstrapTable({ 
@@ -41,9 +42,39 @@
       });
 
     });
+
+    function fillData(){
+      var checked = {{checked|tojson}};
+      if (checked['LeakingSecret'] == true) {document.getElementById('LeakingSecret').checked = true;}
+      if (checked['ModuleImport'] == true) {document.getElementById('ModuleImport').checked = true;}
+      if (checked['SuspiciousFile'] == true) {document.getElementById('SuspiciousFile').checked = true;}
+      if (checked['OutdatedPackage'] == true) {document.getElementById('OutdatedPackage').checked = true;}
+      if (checked['UnpinnedPackage'] == true) {document.getElementById('UnpinnedPackage').checked = true;}
+      if (checked['Base64Blob'] == true) {document.getElementById('Base64Blob').checked = true;}
+      if (checked['Binwalk'] == true) {document.getElementById('Binwalk').checked = true;}
+      if (checked['InvalidRequirement'] == true) {document.getElementById('InvalidRequirement').checked = true;}      
+      if (checked['ArchiveAnomaly'] == true) {document.getElementById('ArchiveAnomaly').checked = true;}
+      if (checked['SuspiciousArchiveEntry'] == true) {document.getElementById('SuspiciousArchiveEntry').checked = true;}
+      if (checked['SetupScript'] == true) {document.getElementById('SetupScript').checked = true;}
+      if (checked['Wheel'] == true) {document.getElementById('Wheel').checked = true;}     
+      if (checked['DataProcessing'] == true) {document.getElementById('DataProcessing').checked = true;}
+      if (checked['FileStats'] == true) {document.getElementById('FileStats').checked = true;}
+      if (checked['ASTAnalysisError'] == true) {document.getElementById('ASTAnalysisError').checked = true;}
+      if (checked['ASTParseError'] == true) {document.getElementById('ASTParseError').checked = true;}
+      if (checked['FunctionCall'] == true) {document.getElementById('FunctionCall').checked = true;}
+      if (checked['SQLInjection'] == true) {document.getElementById('SQLInjection').checked = true;}
+      if (checked['StringMatch'] == true) {document.getElementById('StringMatch').checked = true;}
+      if (checked['YaraMatch'] == true) {document.getElementById('YaraMatch').checked = true;}      
+      if (checked['YaraError'] == true) {document.getElementById('YaraError').checked = true;}
+      if (checked['CryptoKeyGeneration'] == true) {document.getElementById('CryptoKeyGeneration').checked = true;}
+      if (checked['Detection'] == true) {document.getElementById('Detection').checked = true;}
+      if (checked['MalformedXML'] == true) {document.getElementById('MalformedXML').checked = true;}   
+      if (checked['TaintAnomaly'] == true) {document.getElementById('TaintAnomaly').checked = true;}
+      if (checked['Misc'] == true) {document.getElementById('Misc').checked = true;}   
+    }
   </script>
 </head>
-<body>
+<body onload='fillData();'>
   <div class="container" style="padding: 10px; ">
         <img src="/static/logo.png">
         <h3 class="logo">List all packages by highest indicator count </h1>
@@ -135,6 +166,9 @@
         
       </form>
     </div>
+    <script type='text/javascript'>
+
+    </script>
     <div id="toolbar"></div>
     <table
       id="table"

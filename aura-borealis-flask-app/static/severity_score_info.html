@@ -1,13 +1,7 @@
-<!-- The homepage of this Flask app -->
-{% extends "layout.html" %}
-{% block content %}
-  <div class="home">
+  <div>
     <h4>About the Package Severity Score</h4>
     <p>A higher package severity score indicates relatively more and more severe indicators associated with using that package.</p>
     <p>Methodology: A package’s severity score is the sum the severity scores associated with all the indicators linked to one package. The severity scores for each indicator are determined within <a href='https://github.com/SourceCode-AI/aura'>Aura</a>, the underlying static analysis tool on which AuraBorealis depends for data, and correspond roughly to the level of risk entailed by each indicator.</p>
     <p>Caution: Packages with high severity scores can still be safe for usage and packages with low severity scores can be unsafe for usage. Users of AuraBorealis should not use solely these severity scores to make a decision about the safety and security of Python packages. These severity should be one input among many to a larger risk assessment process that also includes the intended application and a consultation with affected parties.</p>
   </div>
-  <br>
-  <p>Powered by:</p>
-  <img height="100" src={{ url_for("static", filename="logotype_aura.png) }}>
-{% endblock %}
+

@@ -20,7 +20,7 @@
     }
 
     td {
-    padding: 15px;
+    padding: 10px;
     } 
   </style>
   <link rel="stylesheet"
@@ -50,129 +50,157 @@
       });
 
     });
+
+    function fillData(){
+      var checked = {{checked|tojson}};
+      if (checked['LeakingSecret'] == true) {document.getElementById('LeakingSecret').checked = true;}
+      if (checked['ModuleImport'] == true) {document.getElementById('ModuleImport').checked = true;}
+      if (checked['SuspiciousFile'] == true) {document.getElementById('SuspiciousFile').checked = true;}
+      if (checked['OutdatedPackage'] == true) {document.getElementById('OutdatedPackage').checked = true;}
+      if (checked['UnpinnedPackage'] == true) {document.getElementById('UnpinnedPackage').checked = true;}
+      if (checked['Base64Blob'] == true) {document.getElementById('Base64Blob').checked = true;}
+      if (checked['Binwalk'] == true) {document.getElementById('Binwalk').checked = true;}
+      if (checked['InvalidRequirement'] == true) {document.getElementById('InvalidRequirement').checked = true;}      
+      if (checked['ArchiveAnomaly'] == true) {document.getElementById('ArchiveAnomaly').checked = true;}
+      if (checked['SuspiciousArchiveEntry'] == true) {document.getElementById('SuspiciousArchiveEntry').checked = true;}
+      if (checked['SetupScript'] == true) {document.getElementById('SetupScript').checked = true;}
+      if (checked['Wheel'] == true) {document.getElementById('Wheel').checked = true;}     
+      if (checked['DataProcessing'] == true) {document.getElementById('DataProcessing').checked = true;}
+      if (checked['FileStats'] == true) {document.getElementById('FileStats').checked = true;}
+      if (checked['ASTAnalysisError'] == true) {document.getElementById('ASTAnalysisError').checked = true;}
+      if (checked['ASTParseError'] == true) {document.getElementById('ASTParseError').checked = true;}
+      if (checked['FunctionCall'] == true) {document.getElementById('FunctionCall').checked = true;}
+      if (checked['SQLInjection'] == true) {document.getElementById('SQLInjection').checked = true;}
+      if (checked['StringMatch'] == true) {document.getElementById('StringMatch').checked = true;}
+      if (checked['YaraMatch'] == true) {document.getElementById('YaraMatch').checked = true;}      
+      if (checked['YaraError'] == true) {document.getElementById('YaraError').checked = true;}
+      if (checked['CryptoKeyGeneration'] == true) {document.getElementById('CryptoKeyGeneration').checked = true;}
+      if (checked['Detection'] == true) {document.getElementById('Detection').checked = true;}
+      if (checked['MalformedXML'] == true) {document.getElementById('MalformedXML').checked = true;}   
+      if (checked['TaintAnomaly'] == true) {document.getElementById('TaintAnomaly').checked = true;}
+      if (checked['Misc'] == true) {document.getElementById('Misc').checked = true;}   
+    }
   </script>
 </head>
-<body>
+<body onload='fillData();'>
   <div class="container" style="padding: 10px; ">
         <img src="/static/logo.png">
-        <h3 class="logo">View all indicators for a single package</h1>
+        <h1 class="logo">View all indicators for a single package</h1>
         <a href="/">back to menu</a>
     <br/>
     <br/>
-    <form method="POST" autocomplete="off">
-    <div class='col-xs-12 col-sm-12 col-md-10 col-lg-10'>
-        <div class='input-group'>
-		<label for="autocomplete">Search</label>
-		<input oninput="dropdown(this.value)" id="autocomplete" class='form-control' type='text' name='package'
-                   placeholder='Enter package name ...'/>
-            <span class="input-group-btn">
-              <button id="searchBtn" type='submit' class='btn btn-default'>
-                <span class='glyphicon glyphicon-search'></span>
-              </button>
-            </span>
-
-        </div>
-    </div>
-    </form>
-    <!--
-    <form class="example" method="post" action="">
-            <input type="text" placeholder="Search by package" name="package">
-            <button type="submit">Submit</button>
-    </form>
-    -->
+    <table border=1>
+      <tr>
+        <td width=100%>
+          <div class='col-xs-12 col-sm-12 col-md-10 col-lg-10'>
+            <div class='input-group'>
+          		<label for="autocomplete">Search</label>
+              <form method="POST" autocomplete="off">
+            		<input oninput="dropdown(this.value)" id="autocomplete" class='form-control' type='text' name='package'
+                           placeholder='Enter package name ...'/>&nbsp;<br><button id="searchBtn" type='submit' class='btn btn-default'><span class='glyphicon glyphicon-search'></span></button>
+              </form>
+            </div>
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <div id="columnSelect">
+            <br>
+            <p>Select one or more indicator types to display:</p>
+            <br>
+            <form method="post">
+              <table border="2">
+                <tr align=center >
+                  <td><i>imports/files</i></td><td><i>embedded strings</i></td><td><i>setup</i></td><td><i>metadata</i></td><td><i>pattern match</i></td><td><i>other</i></td>
+                </tr>
+                <tr>
+                  <td><!-- imports-->
+                    <input type="checkbox" id="ModuleImport" name="ModuleImport" value="ModuleImport">
+                    <label for="ModuleImport"> ModuleImport</label><br>
+                    <input type="checkbox" id="SuspiciousFile" name="SuspiciousFile" value="SuspiciousFile">
+                    <label for="SuspiciousFile"> SuspiciousFile</label><br>
+                    <input type="checkbox" id="OutdatedPackage" name="OutdatedPackage" value="OutdatedPackage">
+                    <label for="OutdatedPackage"> OutdatedPackage</label><br>
+                    <input type="checkbox" id="UnpinnedPackage" name="UnpinnedPackage" value="UnpinnedPackage">
+                    <label for="OutdatedPackage"> UnpinnedPackage</label><br>
+                    <input type="checkbox" id="SensitiveFile" name="SensitiveFile" value="SensitiveFile">
+                    <label for="SensitiveFile"> SensitiveFile</label><br>
+                  </td>
+                  <td><!-- strings-->
+                    <input type="checkbox" id="LeakingSecret" name="LeakingSecret" value="LeakingSecret">
+                    <label for="LeakingSecret"> LeakingSecret</label><br>
+                    <input type="checkbox" id="Base64Blob" name="Base64Blob" value="Base64Blob">
+                    <label for="Base64Blob"> Base64Blob</label><br>
+                    <input type="checkbox" id="Binwalk" name="Binwalk" value="Binwalk">
+                    <label for="Binwalk"> Binwalk</label><br>
+                  </td>
+                  <td><!-- setup-->
+                    <input type="checkbox" id="InvalidRequirement" name="InvalidRequirement" value="InvalidRequirement">
+                    <label for="InvalidRequirement"> InvalidRequirement</label><br>
+                    <input type="checkbox" id="ArchiveAnomaly" name="ArchiveAnomaly" value="ArchiveAnomaly">
+                    <label for="ArchiveAnomaly"> ArchiveAnomaly</label><br>
+                    <input type="checkbox" id="SuspiciousArchiveEntry" name="SuspiciousArchiveEntry" value="SuspiciousArchiveEntry">
+                    <label for="SuspiciousArchiveEntry"> SuspiciousArchiveEntry</label><br>
+                    <input type="checkbox" id="SetupScript" name="SetupScript" value="SetupScript">
+                    <label for="SetupScript"> SetupScript</label><br>
+                    <input type="checkbox" id="Wheel" name="Wheel" value="Wheel">
+                    <label for="Wheel"> Wheel</label><br>
+                  </td>
+                  <td><!-- metadata-->
+                    <input type="checkbox" id="DataProcessing" name="DataProcessing" value="DataProcessing">
+                    <label for="DataProcessing"> DataProcessing</label><br>
+                    <input type="checkbox" id="FileStats" name="FileStats" value="FileStats">
+                    <label for="FileStats"> FileStats</label><br>
+                    <input type="checkbox" id="ASTAnalysisError" name="ASTAnalysisError" value="ASTAnalysisError">
+                    <label for="ASTAnalysisError"> ASTAnalysisError</label><br>
+                    <input type="checkbox" id="ASTParseError" name="ASTParseError" value="ASTParseError">
+                    <label for="ASTParseError"> ASTParseError</label><br>
+                  </td>
+                  <td><!-- pattern match-->
+                    <input type="checkbox" id="FunctionCall" name="FunctionCall" value="FunctionCall">
+                    <label for="FunctionCall"> FunctionCall</label><br>
+                    <input type="checkbox" id="SQLInjection" name="SQLInjection" value="SQLInjection">
+                    <label for="SQLInjection"> SQLInjection</label><br>
+                    <input type="checkbox" id="StringMatch" name="StringMatch" value="StringMatch">
+                    <label for="StringMatch"> StringMatch</label><br>
+                    <input type="checkbox" id="YaraMatch" name="YaraMatch" value="YaraMatch">
+                    <label for="YaraMatch"> YaraMatch</label><br>
+                    <input type="checkbox" id="YaraError" name="YaraError" value="YaraError">
+                    <label for="YaraError"> YaraError</label><br>
+                  </td>
+                  <td><!-- other-->
+                    <input type="checkbox" id="CryptoKeyGeneration" name="CryptoKeyGeneration" value="CryptoKeyGeneration">
+                    <label for="CryptoKeyGeneration"> CryptoKeyGeneration</label><br>
+                    <input type="checkbox" id="Detection" name="Detection" value="Detection">
+                    <label for="Detection"> Detection</label><br>
+                    <input type="checkbox" id="MalformedXML" name="MalformedXML" value="MalformedXML">
+                    <label for="MalformedXML"> MalformedXML</label><br>
+                    <input type="checkbox" id="TaintAnomaly" name="TaintAnomaly" value="TaintAnomaly">
+                    <label for="TaintAnomaly"> TaintAnomaly</label><br>
+                    <input type="checkbox" id="Misc" name="Misc" value="Misc">
+                    <label for="Misc"> Misc</label><br>
+                  </td>
+                </tr>
+                <tr>
+                  <td colspan=6 align="center">
+                    <input type="hidden" id="package" name="package" value="none">
+                    <input type="submit" value="Update">
+                  </td>
+                </tr>
+              </table>
+            </form>
+          </div>
+        </td>
+      </tr>
+    </table>
     <br/>
     <br/>
     <br/>
     <br/>
-    <h4>Package: <b><script>document.write(pack);</script><b></h4>
-    <h4>Overall severity score: <i><script>document.write(score);</script></i></h4>
+    <h2>Package: <b><script>document.write(pack);</script><b></h2>
+    <h3>Overall severity score: <i><script>document.write(score);</script></i></h3>
     <br>
-    <div id="columnSelect">
-      <br>
-      <p>Select one or more indicator types to display:</p>
-      <br>
-      <form method="post">
-        <table border="2">
-          <tr align=center >
-            <td><i>imports/files</i></td><td><i>embedded strings</i></td><td><i>setup</i></td><td><i>metadata</i></td><td><i>pattern match</i></td><td><i>other</i></td>
-          </tr>
-          <tr cellpadding="4" cellspacing="5">
-            <td><!-- imports-->
-              <input type="checkbox" id="ModuleImport" name="ModuleImport" value="ModuleImport">
-              <label for="ModuleImport"> ModuleImport</label><br>
-              <input type="checkbox" id="SuspiciousFile" name="SuspiciousFile" value="SuspiciousFile">
-              <label for="SuspiciousFile"> SuspiciousFile</label><br>
-              <input type="checkbox" id="OutdatedPackage" name="OutdatedPackage" value="OutdatedPackage">
-              <label for="OutdatedPackage"> OutdatedPackage</label><br>
-              <input type="checkbox" id="UnpinnedPackage" name="UnpinnedPackage" value="UnpinnedPackage">
-              <label for="OutdatedPackage"> UnpinnedPackage</label><br>
-              <input type="checkbox" id="SensitiveFile" name="SensitiveFile" value="SensitiveFile">
-              <label for="SensitiveFile"> SensitiveFile</label><br>
-            </td>
-            <td><!-- strings-->
-              <input type="checkbox" id="LeakingSecret" name="LeakingSecret" value="LeakingSecret">
-              <label for="LeakingSecret"> LeakingSecret</label><br>
-              <input type="checkbox" id="Base64Blob" name="Base64Blob" value="Base64Blob">
-              <label for="Base64Blob"> Base64Blob</label><br>
-              <input type="checkbox" id="Binwalk" name="Binwalk" value="Binwalk">
-              <label for="Binwalk"> Binwalk</label><br>
-            </td>
-            <td><!-- setup-->
-              <input type="checkbox" id="InvalidRequirement" name="InvalidRequirement" value="InvalidRequirement">
-              <label for="InvalidRequirement"> InvalidRequirement</label><br>
-              <input type="checkbox" id="ArchiveAnomaly" name="ArchiveAnomaly" value="ArchiveAnomaly">
-              <label for="ArchiveAnomaly"> ArchiveAnomaly</label><br>
-              <input type="checkbox" id="SuspiciousArchiveEntry" name="SuspiciousArchiveEntry" value="SuspiciousArchiveEntry">
-              <label for="SuspiciousArchiveEntry"> SuspiciousArchiveEntry</label><br>
-              <input type="checkbox" id="SetupScript" name="SetupScript" value="SetupScript">
-              <label for="SetupScript"> SetupScript</label><br>
-              <input type="checkbox" id="Wheel" name="Wheel" value="Wheel">
-              <label for="Wheel"> Wheel</label><br>
-            </td>
-            <td><!-- metadata-->
-              <input type="checkbox" id="DataProcessing" name="DataProcessing" value="DataProcessing">
-              <label for="DataProcessing"> DataProcessing</label><br>
-              <input type="checkbox" id="FileStats" name="FileStats" value="FileStats">
-              <label for="FileStats"> FileStats</label><br>
-              <input type="checkbox" id="ASTAnalysisError" name="ASTAnalysisError" value="ASTAnalysisError">
-              <label for="ASTAnalysisError"> ASTAnalysisError</label><br>
-              <input type="checkbox" id="ASTParseError" name="ASTParseError" value="ASTParseError">
-              <label for="ASTParseError"> ASTParseError</label><br>
-            </td>
-            <td><!-- pattern match-->
-              <input type="checkbox" id="FunctionCall" name="FunctionCall" value="FunctionCall">
-              <label for="FunctionCall"> FunctionCall</label><br>
-              <input type="checkbox" id="SQLInjection" name="SQLInjection" value="SQLInjection">
-              <label for="SQLInjection"> SQLInjection</label><br>
-              <input type="checkbox" id="StringMatch" name="StringMatch" value="StringMatch">
-              <label for="StringMatch"> StringMatch</label><br>
-              <input type="checkbox" id="YaraMatch" name="YaraMatch" value="YaraMatch">
-              <label for="YaraMatch"> YaraMatch</label><br>
-              <input type="checkbox" id="YaraError" name="YaraError" value="YaraError">
-              <label for="YaraError"> YaraError</label><br>
-            </td>
-            <td><!-- other-->
-              <input type="checkbox" id="CryptoKeyGeneration" name="CryptoKeyGeneration" value="CryptoKeyGeneration">
-              <label for="CryptoKeyGeneration"> CryptoKeyGeneration</label><br>
-              <input type="checkbox" id="Detection" name="Detection" value="Detection">
-              <label for="Detection"> Detection</label><br>
-              <input type="checkbox" id="MalformedXML" name="MalformedXML" value="MalformedXML">
-              <label for="MalformedXML"> MalformedXML</label><br>
-              <input type="checkbox" id="TaintAnomaly" name="TaintAnomaly" value="TaintAnomaly">
-              <label for="TaintAnomaly"> TaintAnomaly</label><br>
-              <input type="checkbox" id="Misc" name="Misc" value="Misc">
-              <label for="Misc"> Misc</label><br>
-            </td>
-          </tr>
-          <tr>
-            <td colspan=6 align="center">
-              <input type="submit" value="Update">
-            </td>
-          </tr>
-        </table>
-        
-      </form>
-    </div>
     <div id="toolbar"></div>
     <table
       id="table"
@@ -193,5 +221,8 @@
       data-height="500">
     </table>
   </div>
+  <script>
+    document.getElementById("package").value=pack;
+  </script>
 </body>
 </html>
