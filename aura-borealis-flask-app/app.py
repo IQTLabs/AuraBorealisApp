@@ -441,20 +441,20 @@ def comparison():
 			if warning_type in package2_warnings.keys() and severity in package2_warnings[warning_type].keys():
 				p2_sum += package2_warnings[warning_type][severity]
 		if p1_sum != 0:
-			p1_sum = '<a href="/loc?package=' + package1 + '&warning=' + warning_type + '&severity=ALL">' + str(p1_sum) + '</a>'
+			p1_sum = '<a target="_blank" href="/loc?package=' + package1 + '&warning=' + warning_type + '&severity=ALL">' + str(p1_sum) + '</a>'
 		if p2_sum != 0:
-			p2_sum = '<a href="/loc?package=' + package2 + '&warning=' + warning_type + '&severity=ALL">' + str(p2_sum) + '</a>'		
-		data.append({"package1": p1_sum,"package2": p2_sum,"warning_type": "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#" + warning_type.lower() + "'>" + warning_type + "</a>"})
+			p2_sum = '<a target="_blank" href="/loc?package=' + package2 + '&warning=' + warning_type + '&severity=ALL">' + str(p2_sum) + '</a>'		
+		data.append({"package1": p1_sum,"package2": p2_sum,"warning_type": "<a target='_blank' href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#" + warning_type.lower() + "'>" + warning_type + "</a>"})
 
 	columns = [
 		{
 		"field": "package1", # which is the field's name of data key 
-		"title": "<a href='/single_package?package=" + package1 + "'>" + package1 + "</a>", # display as the table header's name
+		"title": "<a target='_blank' href='/single_package?package=" + package1 + "'>" + package1 + "</a>", # display as the table header's name
 		"sortable": True,
 		},
 		{
 		"field": "package2",
-		"title": "<a href='/single_package?package=" + package2 + "'>" + package2 + "</a>",
+		"title": "<a target='_blank' href='/single_package?package=" + package2 + "'>" + package2 + "</a>",
 		"sortable": True,
 		},
 	 {
