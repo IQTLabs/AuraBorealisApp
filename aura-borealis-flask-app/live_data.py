@@ -42,6 +42,9 @@ def scan_aggs(search, source_aggs, inner_aggs={}, size=10):
 
 
 def get_unique_package_list():
+    '''
+        Returns a list of all the unique packages in the database
+    '''
     client = Elasticsearch(host=HOST)
     #client = Elasticsearch(host='vpc-auradata-gvykpxgobffy7eomi2q7hmqbma.us-east-1.es.amazonaws.com')
 
@@ -73,6 +76,15 @@ def get_unique_package_list():
 
 
 def get_warnings_by_package(package_name, package_warnings):
+    '''
+        Returns all the warnings for a specific package
+
+        Arguments:
+            package_name: the package in the database
+            package_warnings: a dict keyed by warning_type we will populate in this function
+        Returns:
+            None, but populates the package_warnings dict
+    '''
     client = Elasticsearch(host=HOST)
     s = Search(using=client)
     s = s.source(['package', 'type', 'severity', 'score'])

@@ -21,9 +21,6 @@ from live_data import connect_and_load_default
 
 from dummy_data import getDummyData
 
-unique_packages = []
-all_raw_scores = []
-
 WARNING_TYPES = ['LeakingSecret', 'SuspiciousFile', 'SQLInjection', 'SensitiveFile', 'SetupScript', 'FunctionCall', 
 		'Base64Blob', 'Binwalk', 'CryptoKeyGeneration', 'DataProcessing', 'Detection', 'InvalidRequirement', 'MalformedXML',
 		'ArchiveAnomaly', 'SuspiciousArchiveEntry', 'OutdatedPackage', 'UnpinnedPackage', 'TaintAnomaly', 'Wheel', 'StringMatch',
@@ -141,14 +138,17 @@ def top_warnings():
 	data = []
 	for package in dict_packages.keys():
 		entry = {}
-		entry['package'] = "<a href='/single_package?package=" + package +"'>" + package +"</a>"
+		entry['package'] = "<a target='_blank' href='/single_package?package=" + package +"'>" + package +"</a>"
 		warning_counts = {}
+
+		# add up the number of times that warning type appears for each package
 		for warning in dict_packages[package]:	# go through a list of all the warnings for a package
 			if warning['warning_type'] not in warning_counts.keys():
 				warning_counts[warning['warning_type']] = 1
 			else:
 				warning_counts[warning['warning_type']] += 1
 
+		# display in the table/data the total sum of that warning type, or zero
 		for warning_type in warning_types_selected:
 			if warning_type in warning_counts.keys():
 				entry[warning_type.lower()] = warning_counts[warning_type]
@@ -182,6 +182,18 @@ def sum_warning_count():
 			count += init_all_unique_warnings[package][warning]
 		all_unique_warnings_summed[package] = count
 
+	# prepare the data to display on the table on this page
+	data = []
+	for package in list(init_all_severities.keys()):
+		entry = {"package": "<a href='/single_package?package=" + package + "'>" + package + "</a>"}
+		entry['total_warnings_count'] = init_all_warnings[package]
+		entry['unique_warnings_count'] = all_unique_warnings_summed[package]
+		entry['severity_rating'] = 0
+
+		if package in init_all_percentiles.keys():
+			entry['severity_rating'] = init_all_percentiles[package]
+		data.append(entry)
+
 	columns = [
 		{
 		"field": "package", # which is the field's name of data key 
@@ -205,28 +217,17 @@ def sum_warning_count():
 		}
 	]
 
-	# prepare the data to display on the table on this page
-	data = []
-	for package in list(init_all_severities.keys()):
-		entry = {"package": "<a href='/single_package?package=" + package + "'>" + package + "</a>"}
-		entry['total_warnings_count'] = init_all_warnings[package]
-		entry['unique_warnings_count'] = all_unique_warnings_summed[package]
-		entry['severity_rating'] = 0
-
-		if package in init_all_percentiles.keys():
-			entry['severity_rating'] = init_all_percentiles[package]
-		data.append(entry)
-
 	return render_template("sum_warning_count.html",
 		data=data,
 		columns=columns,
 		title='Aura Borealis')
 
+
 # display all packages that have changed in total warnings, total unique warning, or severity 
 # score between two dates 
 @app.route('/diff_dates/', methods=['GET', 'POST'])
 def diff_dates():
-
+	'''
 	# if the user searches for a specific package by name
 	# TODO: fix this to be a proper comparison
 	search = PackageSearch(request.form)
@@ -264,6 +265,143 @@ def diff_dates():
 		columns=columns,
 		title='Aura Borealis',
 		form=search)
+	'''
+
+# display warning information for a single package
+@app.route('/single_package/', methods=['GET', 'POST'])
+def single_package():
+
+	# see if the user selected various warnings, or searched for a specific package
+	warning_types_selected = []
+	checked = {}
+	if request.method == 'POST':
+		warning_types_selected = get_user_selected_warnings(request)
+		for type_w in warning_types_selected:
+			checked[type_w] = True
+	
+	if len(warning_types_selected) == 0:
+		warning_types_selected = WARNING_TYPES
+
+	package = request.args.get('package')
+	if package == None:
+		if request.method == "POST":
+			package = request.form['package']
+		else:
+			package = 'gps-helper-cs'
+	score = init_all_percentiles[package]
+	count_warnings = {}
+		
+	get_warnings_by_package(package, count_warnings)
+	LOCs = get_LOC_by_warning(package)
+
+	# process the lines of code data into a dict of data, keyed by warning_type
+	entries = {}
+	for loc in LOCs:
+		warning_type = loc[3]
+		severity = loc[4]
+		if warning_type not in entries.keys():
+			entries[warning_type] = {}
+			entries[warning_type]['label'] = "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#" + warning_type.lower() + "' target='_blank'>" + warning_type + "</a>"
+		if severity in entries[warning_type].keys():
+			entries[warning_type][severity]['count'] += 1
+		else:
+			entries[warning_type][severity] = {}
+			entries[warning_type][severity]['count'] = 1
+
+	# process the dict above into rows of a summary table by warning type
+	data = []
+	for warning_type in entries.keys():
+		if warning_type in warning_types_selected:
+			row = {}
+			row['warning_type'] = "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#" + warning_type.lower() + "' target='_blank'>" + warning_type + "</a>"
+			for severity in SEVERITIES:
+				if severity in entries[warning_type].keys(): 
+					row[severity] = entries[warning_type][severity]['count']
+				else:
+					row[severity] = 0
+
+			data.append(row)
+
+	# clean the lines of code information for the package to display in a detailed table
+	cleaned_locs = []
+	for loc in LOCs:
+		if (loc[2] is None or '$' not in loc[2]) and loc[3] in warning_types_selected:
+			cleaned_locs.append({'warning_type':entries[loc[3]]['label'], 'severity':loc[4], 'line':loc[1], 'code':loc[0], 'filename':loc[2]})
+		elif loc[3] in warning_types_selected:   
+			cleaned_locs.append({'warning_type':entries[loc[3]]['label'], 'severity':loc[4], 'line':loc[1], 'code':loc[0], 'filename':loc[2].split('$')[1]})
+
+	# columns for lines of code table
+	loc_columns = [
+	{
+		"field": "warning_type",
+		"title": "indicator type",
+		"sortable": True,
+		},
+		{
+		"field": "severity", # which is the field's name of data key 
+		"title": "severity", # display as the table header's name
+		"sortable": True,
+		},
+		{
+		"field": "line",
+		"title": "line",
+		"sortable": True,
+		},
+		{
+		"field": "code", # which is the field's name of data key 
+		"title": "code", # display as the table header's name
+		"sortable": True,
+		},
+		{
+		"field": "filename",
+		"title": "filename",
+		"sortable": True,
+		},
+	]
+
+	# columns for summary table
+	columns = [
+	{
+		"field": "warning_type",
+		"title": "indicator type",
+		"sortable": True,
+		},
+		{
+		"field": "critical", # which is the field's name of data key 
+		"title": "critical", # display as the table header's name
+		"sortable": True,
+		},
+		{
+		"field": "high",
+		"title": "high",
+		"sortable": True,
+		},
+		{
+		"field": "moderate", # which is the field's name of data key 
+		"title": "moderate", # display as the table header's name
+		"sortable": True,
+		},
+		{
+		"field": "low",
+		"title": "low",
+		"sortable": True,
+		},
+		{
+		"field": "unknown",
+		"title": "unknown",
+		"sortable": True,
+		},
+	]
+
+	return render_template("single_package.html",
+		data=data,
+		columns=columns,
+		title='Aura Borealis',
+		package=package,
+		score=score,
+		data_cleaned_locs=cleaned_locs,
+		loc_columns=loc_columns,
+		checked=checked)
 
 # display a comparison between two packages, two versions, or a package and a benchmark profile
 @app.route('/comparison/', methods=['GET', 'POST'])
@@ -335,147 +473,6 @@ def comparison():
 		package2=package2,
 		packages=unique_packages)
 
-# display warning information for a single package
-@app.route('/single_package/', methods=['GET', 'POST'])
-def single_package():
-
-	warning_types_selected = []
-	checked = {}
-	if request.method == 'POST':
-		warning_types_selected = get_user_selected_warnings(request)
-		for type_w in warning_types_selected:
-			checked[type_w] = True
-	
-	if len(warning_types_selected) == 0:
-		warning_types_selected = WARNING_TYPES
-
-	package = request.args.get('package')
-	if package == None:
-		if request.method == "POST":
-			package = request.form['package']
-		else:
-			package = 'gps-helper-cs'
-	score = init_all_percentiles[package]
-	count_warnings = {}
-		
-	get_warnings_by_package(package, count_warnings)
-
-	data = []
-	LOCs = get_LOC_by_warning(package)
-	for warning_type in warning_types_selected:
-		for severity in SEVERITIES:
-			cleaned_locs = []
-			for loc in LOCs:
-				if loc[2] is None:
-					cleaned_locs.append({'warning_type':warning_type, 'severity':severity, 'line':loc[1], 'code':loc[0], 'filename':loc[2]})
-				else:   
-					cleaned_locs.append({'warning_type':warning_type, 'severity':severity, 'line':loc[1], 'code':loc[0], 'filename':loc[2].split('$')[1]})
-
-	entries = {}
-	for loc in LOCs:
-		warning_type = loc[3]
-		severity = loc[4]
-		if warning_type not in entries.keys():
-			entries[warning_type] = {}
-			entries[warning_type]['label'] = "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#" + warning_type.lower() + "' target='_blank'>" + warning_type + "</a>"
-		if severity in entries[warning_type].keys():
-			entries[warning_type][severity]['count'] += 1
-		else:
-			entries[warning_type][severity] = {}
-			entries[warning_type][severity]['count'] = 1
-
-	data = []
-	for warning_type in entries.keys():
-		if warning_type in warning_types_selected:
-			row = {}
-			row['warning_type'] = "<a href='https://docs.aura.sourcecode.ai/cookbook/misc/detections.html#" + warning_type.lower() + "' target='_blank'>" + warning_type + "</a>"
-			for severity in SEVERITIES:
-				if severity in entries[warning_type].keys(): 
-					row[severity] = entries[warning_type][severity]['count']
-				else:
-					row[severity] = 0
-
-			data.append(row)
-
-	cleaned_locs = []
-	LOCs = get_LOC_by_warning(package)
-	for loc in LOCs:
-		if loc[2] is None and loc[3] in warning_types_selected:
-			cleaned_locs.append({'warning_type':entries[loc[3]]['label'], 'severity':loc[4], 'line':loc[1], 'code':loc[0], 'filename':loc[2]})
-		elif loc[3] in warning_types_selected:   
-			cleaned_locs.append({'warning_type':entries[loc[3]]['label'], 'severity':loc[4], 'line':loc[1], 'code':loc[0], 'filename':loc[2].split('$')[1]})
-
-	loc_columns = [
-	{
-
-		"field": "warning_type",
-		"title": "indicator type",
-		"sortable": True,
-		},
-		{
-		"field": "severity", # which is the field's name of data key 
-		"title": "severity", # display as the table header's name
-		"sortable": True,
-		},
-		{
-		"field": "line",
-		"title": "line",
-		"sortable": True,
-		},
-		{
-		"field": "code", # which is the field's name of data key 
-		"title": "code", # display as the table header's name
-		"sortable": True,
-		},
-		{
-		"field": "filename",
-		"title": "filename",
-		"sortable": True,
-		},
-	]
-
-	columns = [
-	{
-		"field": "warning_type",
-		"title": "indicator type",
-		"sortable": True,
-		},
-		{
-		"field": "critical", # which is the field's name of data key 
-		"title": "critical", # display as the table header's name
-		"sortable": True,
-		},
-		{
-		"field": "high",
-		"title": "high",
-		"sortable": True,
-		},
-		{
-		"field": "moderate", # which is the field's name of data key 
-		"title": "moderate", # display as the table header's name
-		"sortable": True,
-		},
-		{
-		"field": "low",
-		"title": "low",
-		"sortable": True,
-		},
-		{
-		"field": "unknown",
-		"title": "unknown",
-		"sortable": True,
-		},
-	]
-
-	return render_template("single_package.html",
-		data=data,
-		columns=columns,
-		title='Aura Borealis',
-		package=package,
-		score=score,
-		data_cleaned_locs=cleaned_locs,
-		loc_columns=loc_columns,
-		checked=checked)
 
 @app.route('/autocomplete/<inp>', methods=['GET'])
 def autocomplete(inp):
