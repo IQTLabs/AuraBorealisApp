@@ -16,13 +16,14 @@ Current features include:
 	* List packages with the highest number of security warnings, sorted by [Aura warning type](https://docs.aura.sourcecode.ai/cookbook/misc/detections.html)
 	* List packages sorted by the total and unique count of warnings
 	* List packages by their overall severity score
-	* List packages that have changes in their warnings and/or severity score between two dates
 
 * Displaying security warnings for an individual package, sorted by criticality
 * Visualize the line numbers and lines of code in files generating security warnings for a specific package
-* Compare two packages or different versions of the same package for security warnings
+* Compare two packages for security warnings
 
 ## Instructions
+
+Turn on your VPN (at IQT)
 
 Clone the repository.
 
@@ -40,11 +41,13 @@ Run the app.
 
 `python app.py` 
 
-Navigate to the URL `http://0.0.0.0:5000/` via a browser.
+Navigate to the URL `http://0.0.0.0:7000/` via a browser.
 
 ## Feature Roadmap
 
 * Compare a package to a *benchmark profile* of packages of similar purpose for security warnings
+* Compare different versions of the same package for security warnings
+* List packages that have changes in their warnings and/or severity score between two dates
 * Ability to scan an internal package/registry that's not public on PyPI
 * Display an analysis of permissions (does this package make a network connection? Does this package require OS-level library permissions?)
 
