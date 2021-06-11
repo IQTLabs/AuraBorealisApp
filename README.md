@@ -53,7 +53,9 @@ Navigate to the URL `http://0.0.0.0:7000/` via a browser.
 
 ## Contact Information
 
-jmeyers@iqt.org (John Speed Meyers, Secure Code Reuse project lead). The lead developer and creator of Aura is Martin Carnogusky of [sourcecode.ai](https://aura.sourcecode.ai/).
+jmeyers@iqt.org (John Speed Meyers, IQT Labs, Secure Code Reuse project lead).
+
+The lead developer and creator of Aura is Martin Carnogusky of [sourcecode.ai](https://aura.sourcecode.ai/).
 
 ## Related Work
 
