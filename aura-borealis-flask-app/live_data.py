@@ -11,6 +11,7 @@ from elasticsearch_dsl import Search, A, Q
 
 #HOST = '192.168.68.9'
 #HOST = 'localhost'
+# TODO: Make HOST variable an environmental variable to set up time.
 HOST = 'vpc-auradata2-2b3s6lmtpt2wcb6ytkjd2y5yau.us-east-1.es.amazonaws.com'
 DEBUG = " limit 100"
 
