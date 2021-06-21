@@ -284,7 +284,6 @@ def connect_and_load_default(warning_types):
         get_all_warnings_x(warning, all_warnings)
     return all_warnings
 
-'''
 def iterate_distinct_field(fieldname, pagesize=250, **kwargs):
     """
     Helper to get all distinct values from ElasticSearch
@@ -327,7 +326,14 @@ def get_unique_warnings():
     for result in res:
         print(result)
     return res
-'''
+
+def get_unique_warning_types():
+    res = iterate_distinct_field(fieldname="type.keyword", index="lambda-s3-file-index")
+    for result in res:
+        print(result)
+    return res
+
+
 
 #if __name__ == '__main__':
     #get_all_scores_x()
@@ -336,6 +342,7 @@ def get_unique_warnings():
     #get_unique_package_list()
     #get_all_scores()
     #get_unique_warnings()
+    #get_unique_warning_types()
     #all_warnings = {}
     #get_all_warnings_x('SensitiveFile', all_warnings) 
     #get_unique_package_list()
