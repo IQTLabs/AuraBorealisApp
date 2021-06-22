@@ -18,13 +18,16 @@ from live_data import get_LOC_by_warning
 from live_data import get_all_warnings_counts_x
 from live_data import connect_and_load_default
 from live_data import connect_and_load_default
+from live_data import get_unique_warning_types
 
 from dummy_data import getDummyData
 
-WARNING_TYPES = ['LeakingSecret', 'SuspiciousFile', 'SQLInjection', 'SensitiveFile', 'SetupScript', 'FunctionCall', 
+
+WARNING_TYPES = [] # will populate in main below
+'''WARNING_TYPES = ['LeakingSecret', 'SuspiciousFile', 'SQLInjection', 'SensitiveFile', 'SetupScript', 'FunctionCall', 
 		'Base64Blob', 'Binwalk', 'CryptoKeyGeneration', 'DataProcessing', 'Detection', 'InvalidRequirement', 'MalformedXML',
 		'ArchiveAnomaly', 'SuspiciousArchiveEntry', 'OutdatedPackage', 'UnpinnedPackage', 'TaintAnomaly', 'Wheel', 'StringMatch',
-		'FileStats', 'YaraMatch', 'YaraError', 'ASTAnalysisError', 'ASTParseError', 'Misc']
+		'FileStats', 'YaraMatch', 'YaraError', 'ASTAnalysisError', 'ASTParseError', 'Misc']'''
 
 SEVERITIES = ['critical', 'high', 'moderate', 'low', 'unknown']
 
@@ -34,7 +37,13 @@ def get_user_selected_warnings(request):
 		collects all the checked checkboxes from a POST request used on various forms, 
 		and returns them as a list of strings
 	'''
+
 	warning_types_selected = []
+	for warning_type in WARNING_TYPES:
+		if request.form.get(warning_type) != None:
+			warning_types_selected.append(request.form.get(warning_type))
+
+	'''	
 	if request.form.get('LeakingSecret') != None:
 		warning_types_selected.append(request.form.get('LeakingSecret'))
 	if request.form.get('SuspiciousFile') != None:
@@ -87,8 +96,14 @@ def get_user_selected_warnings(request):
 		warning_types_selected.append(request.form.get('ASTAnalysisError'))
 	if request.form.get('ASTParseError') != None:
 		warning_types_selected.append(request.form.get('ASTParseError'))
+	if request.form.get('ASTPattern') != None:
+		warning_types_selected.append(request.form.get('ASTPattern'))
 	if request.form.get('Misc') != None:
 		warning_types_selected.append(request.form.get('Misc'))
+	if request.form.get('HighEntropyString') != None:
+		warning_types_selected.append(request.form.get('HighEntropyString'))
+	if request.form.get('HighEntropyString') != None:
+		warning_types_selected.append(request.form.get('HighEntropyString'))'''
 
 	return warning_types_selected
 
@@ -520,13 +535,21 @@ if __name__ == '__main__':
 		cacheData(init_all_unique_warnings, 'init_all_unique_warnings')
 		cacheData(init_all_severities, 'init_all_severities')
 		cacheData(init_all_percentiles, 'init_all_percentiles')
-		print('init_all_percentiles', init_all_percentiles)'''
+		print('init_all_percentiles', init_all_percentiles)
+
+		all_warning_types = get_unique_warning_types()
+		for warning_type in all_warning_types:
+			WARNING_TYPES.append(warning_type['key']['type.keyword'])
+		print('WARNING_TYPES', WARNING_TYPES)
+		cacheData(WARNING_TYPES, 'WARNING_TYPES')'''
+		
 
 		unique_packages = list(loadData('unique_packages'))
 		init_all_warnings = loadData('init_all_warnings')
 		init_all_unique_warnings = loadData('init_all_unique_warnings')
 		init_all_severities = loadData('init_all_severities')
 		init_all_percentiles = loadData('init_all_percentiles')
+		WARNING_TYPES = loadData('WARNING_TYPES')
 
 		all_raw_scores = init_all_severities
 		app.run(host='0.0.0.0', debug=True, port=7000)
