@@ -3,22 +3,24 @@ import os
 import pickle
 import time
 
-from flask import Flask
-from flask import jsonify
-from flask import make_response
-from flask import render_template
-from flask import request
+from flask import (Flask, 
+	jsonify,
+	make_response, 
+	render_template,
+	request
+)
 
 from flask_datepicker import datepicker
 from search import PackageSearch
 
-from live_data import get_unique_package_list
-from live_data import get_warnings_by_package
-from live_data import get_LOC_by_warning
-from live_data import get_all_warnings_counts_x
-from live_data import connect_and_load_default
-from live_data import connect_and_load_default
-from live_data import get_unique_warning_types
+from live_data import (get_unique_package_list,
+	get_warnings_by_package,
+	get_LOC_by_warning,
+	get_all_warnings_counts_x,
+	connect_and_load_default,
+	connect_and_load_default,
+	get_unique_warning_types
+)
 
 from dummy_data import getDummyData
 
@@ -475,6 +477,7 @@ if __name__ == '__main__':
 		cacheData(init_all_percentiles, 'init_all_percentiles')
 		print('init_all_percentiles', init_all_percentiles)
 
+		# generate a cache for all the current warnings in the database
 		all_warning_types = get_unique_warning_types()
 		for warning_type in all_warning_types:
 			WARNING_TYPES.append(warning_type['key']['type.keyword'])
