@@ -329,8 +329,8 @@ def get_unique_warnings():
 
 def get_unique_warning_types():
     res = iterate_distinct_field(fieldname="type.keyword", index="lambda-s3-file-index")
-    for result in res:
-        print(result)
+    #for result in res:
+    #    print(result)
     return res
 
 
