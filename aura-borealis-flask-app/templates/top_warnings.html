@@ -61,6 +61,7 @@
       if (checked['FileStats'] == true) {document.getElementById('FileStats').checked = true;}
       if (checked['ASTAnalysisError'] == true) {document.getElementById('ASTAnalysisError').checked = true;}
       if (checked['ASTParseError'] == true) {document.getElementById('ASTParseError').checked = true;}
+      if (checked['ASTPattern'] == true) {document.getElementById('ASTPattern').checked = true;}
       if (checked['FunctionCall'] == true) {document.getElementById('FunctionCall').checked = true;}
       if (checked['SQLInjection'] == true) {document.getElementById('SQLInjection').checked = true;}
       if (checked['StringMatch'] == true) {document.getElementById('StringMatch').checked = true;}
@@ -71,6 +72,11 @@
       if (checked['MalformedXML'] == true) {document.getElementById('MalformedXML').checked = true;}   
       if (checked['TaintAnomaly'] == true) {document.getElementById('TaintAnomaly').checked = true;}
       if (checked['Misc'] == true) {document.getElementById('Misc').checked = true;}   
+      if (checked['HighEntropyString'] == true) {document.getElementById('HighEntropyString').checked = true;}   
+      if (checked['LeakingPyPIrc'] == true) {document.getElementById('LeakingPyPIrc').checked = true;}  
+      if (checked['PackageInformation'] == true) {document.getElementById('PackageInformation').checked = true;}  
+      if (checked['ReDoS'] == true) {document.getElementById('ReDoS').checked = true;}  
+      if (checked['Typosquatting'] == true) {document.getElementById('Typosquatting').checked = true;}  
     }
   </script>
 </head>
@@ -102,6 +108,8 @@
               <label for="OutdatedPackage"> UnpinnedPackage</label><br>
               <input type="checkbox" id="SensitiveFile" name="SensitiveFile" value="SensitiveFile">
               <label for="SensitiveFile"> SensitiveFile</label><br>
+              <input type="checkbox" id="Typosquatting" name="Typosquatting" value="Typosquatting">
+              <label for="Typosquatting"> Typosquatting</label><br>
             </td>
             <td><!-- strings-->
               <input type="checkbox" id="LeakingSecret" name="LeakingSecret" value="LeakingSecret">
@@ -110,6 +118,10 @@
               <label for="Base64Blob"> Base64Blob</label><br>
               <input type="checkbox" id="Binwalk" name="Binwalk" value="Binwalk">
               <label for="Binwalk"> Binwalk</label><br>
+              <input type="checkbox" id="HighEntropyString" name="HighEntropyString" value="HighEntropyString">
+              <label for="HighEntropyString"> HighEntropyString</label><br>
+              <input type="checkbox" id="LeakingPyPIrc" name="LeakingPyPIrc" value="LeakingPyPIrc">
+              <label for="LeakingPyPIrc"> LeakingPyPIrc</label><br>
             </td>
             <td><!-- setup-->
               <input type="checkbox" id="InvalidRequirement" name="InvalidRequirement" value="InvalidRequirement">
@@ -132,6 +144,8 @@
               <label for="ASTAnalysisError"> ASTAnalysisError</label><br>
               <input type="checkbox" id="ASTParseError" name="ASTParseError" value="ASTParseError">
               <label for="ASTParseError"> ASTParseError</label><br>
+              <input type="checkbox" id="ASTPattern" name="ASTPattern" value="ASTPattern">
+              <label for="ASTPattern"> ASTPattern</label><br>
             </td>
             <td><!-- pattern match-->
               <input type="checkbox" id="FunctionCall" name="FunctionCall" value="FunctionCall">
@@ -156,6 +170,10 @@
               <label for="TaintAnomaly"> TaintAnomaly</label><br>
               <input type="checkbox" id="Misc" name="Misc" value="Misc">
               <label for="Misc"> Misc</label><br>
+              <input type="checkbox" id="PackageInformation" name="PackageInformation" value="PackageInformation">
+              <label for="PackageInformation"> PackageInformation</label><br>
+              <input type="checkbox" id="ReDoS" name="ReDoS" value="ReDoS">
+              <label for="ReDoS"> ReDoS</label><br>
             </td>
           </tr>
           <tr>

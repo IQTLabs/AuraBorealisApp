@@ -3,28 +3,33 @@ import os
 import pickle
 import time
 
-from flask import Flask
-from flask import jsonify
-from flask import make_response
-from flask import render_template
-from flask import request
+from flask import (Flask, 
+	jsonify,
+	make_response, 
+	render_template,
+	request
+)
 
 from flask_datepicker import datepicker
 from search import PackageSearch
 
-from live_data import get_unique_package_list
-from live_data import get_warnings_by_package
-from live_data import get_LOC_by_warning
-from live_data import get_all_warnings_counts_x
-from live_data import connect_and_load_default
-from live_data import connect_and_load_default
+from live_data import (get_unique_package_list,
+	get_warnings_by_package,
+	get_LOC_by_warning,
+	get_all_warnings_counts_x,
+	connect_and_load_default,
+	connect_and_load_default,
+	get_unique_warning_types
+)
 
 from dummy_data import getDummyData
 
-WARNING_TYPES = ['LeakingSecret', 'SuspiciousFile', 'SQLInjection', 'SensitiveFile', 'SetupScript', 'FunctionCall', 
+
+WARNING_TYPES = [] # will populate in main below
+'''WARNING_TYPES = ['LeakingSecret', 'SuspiciousFile', 'SQLInjection', 'SensitiveFile', 'SetupScript', 'FunctionCall', 
 		'Base64Blob', 'Binwalk', 'CryptoKeyGeneration', 'DataProcessing', 'Detection', 'InvalidRequirement', 'MalformedXML',
 		'ArchiveAnomaly', 'SuspiciousArchiveEntry', 'OutdatedPackage', 'UnpinnedPackage', 'TaintAnomaly', 'Wheel', 'StringMatch',
-		'FileStats', 'YaraMatch', 'YaraError', 'ASTAnalysisError', 'ASTParseError', 'Misc']
+		'FileStats', 'YaraMatch', 'YaraError', 'ASTAnalysisError', 'ASTParseError', 'Misc']'''
 
 SEVERITIES = ['critical', 'high', 'moderate', 'low', 'unknown']
 
@@ -34,61 +39,11 @@ def get_user_selected_warnings(request):
 		collects all the checked checkboxes from a POST request used on various forms, 
 		and returns them as a list of strings
 	'''
+
 	warning_types_selected = []
-	if request.form.get('LeakingSecret') != None:
-		warning_types_selected.append(request.form.get('LeakingSecret'))
-	if request.form.get('SuspiciousFile') != None:
-		warning_types_selected.append(request.form.get('SuspiciousFile'))
-	if request.form.get('SensitiveFile') != None:
-		warning_types_selected.append(request.form.get('SensitiveFile'))
-	if request.form.get('SQLInjection') != None:
-		warning_types_selected.append(request.form.get('SQLInjection'))
-	if request.form.get('SetupScript') != None:
-		warning_types_selected.append(request.form.get('SetupScript'))
-	if request.form.get('FunctionCall') != None:
-		warning_types_selected.append(request.form.get('FunctionCall'))
-	if request.form.get('ModuleImport') != None:
-		warning_types_selected.append(request.form.get('ModuleImport'))
-	if request.form.get('Base64Blob') != None:
-		warning_types_selected.append(request.form.get('Base64Blob'))
-	if request.form.get('Binwalk') != None:
-		warning_types_selected.append(request.form.get('Binwalk'))
-	if request.form.get('CryptoKeyGeneration') != None:
-		warning_types_selected.append(request.form.get('CryptoKeyGeneration'))
-	if request.form.get('DataProcessing') != None:
-		warning_types_selected.append(request.form.get('DataProcessing'))
-	if request.form.get('Detection') != None:
-		warning_types_selected.append(request.form.get('Detection'))
-	if request.form.get('InvalidRequirement') != None:
-		warning_types_selected.append(request.form.get('InvalidRequirement'))
-	if request.form.get('MalformedXML') != None:
-		warning_types_selected.append(request.form.get('MalformedXML'))
-	if request.form.get('ArchiveAnomaly') != None:
-		warning_types_selected.append(request.form.get('ArchiveAnomaly'))
-	if request.form.get('SuspiciousArchiveEntry') != None:
-		warning_types_selected.append(request.form.get('SuspiciousArchiveEntry'))
-	if request.form.get('OutdatedPackage') != None:
-		warning_types_selected.append(request.form.get('OutdatedPackage'))
-	if request.form.get('UnpinnedPackage') != None:
-		warning_types_selected.append(request.form.get('UnpinnedPackage'))
-	if request.form.get('TaintAnomaly') != None:
-		warning_types_selected.append(request.form.get('TaintAnomaly'))
-	if request.form.get('Wheel') != None:
-		warning_types_selected.append(request.form.get('Wheel'))
-	if request.form.get('StringMatch') != None:
-		warning_types_selected.append(request.form.get('StringMatch'))
-	if request.form.get('FileStats') != None:
-		warning_types_selected.append(request.form.get('FileStats'))
-	if request.form.get('YaraMatch') != None:
-		warning_types_selected.append(request.form.get('YaraMatch'))
-	if request.form.get('YaraError') != None:
-		warning_types_selected.append(request.form.get('YaraError'))
-	if request.form.get('ASTAnalysisError') != None:
-		warning_types_selected.append(request.form.get('ASTAnalysisError'))
-	if request.form.get('ASTParseError') != None:
-		warning_types_selected.append(request.form.get('ASTParseError'))
-	if request.form.get('Misc') != None:
-		warning_types_selected.append(request.form.get('Misc'))
+	for warning_type in WARNING_TYPES:
+		if request.form.get(warning_type) != None:
+			warning_types_selected.append(request.form.get(warning_type))
 
 	return warning_types_selected
 
@@ -520,13 +475,22 @@ if __name__ == '__main__':
 		cacheData(init_all_unique_warnings, 'init_all_unique_warnings')
 		cacheData(init_all_severities, 'init_all_severities')
 		cacheData(init_all_percentiles, 'init_all_percentiles')
-		print('init_all_percentiles', init_all_percentiles)'''
+		print('init_all_percentiles', init_all_percentiles)
+
+		# generate a cache for all the current warnings in the database
+		all_warning_types = get_unique_warning_types()
+		for warning_type in all_warning_types:
+			WARNING_TYPES.append(warning_type['key']['type.keyword'])
+		print('WARNING_TYPES', WARNING_TYPES)
+		cacheData(WARNING_TYPES, 'WARNING_TYPES')'''
+		
 
 		unique_packages = list(loadData('unique_packages'))
 		init_all_warnings = loadData('init_all_warnings')
 		init_all_unique_warnings = loadData('init_all_unique_warnings')
 		init_all_severities = loadData('init_all_severities')
 		init_all_percentiles = loadData('init_all_percentiles')
+		WARNING_TYPES = loadData('WARNING_TYPES')
 
 		all_raw_scores = init_all_severities
 		app.run(host='0.0.0.0', debug=True, port=7000)
