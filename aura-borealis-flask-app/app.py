@@ -43,68 +43,6 @@ def get_user_selected_warnings(request):
 		if request.form.get(warning_type) != None:
 			warning_types_selected.append(request.form.get(warning_type))
 
-	'''	
-	if request.form.get('LeakingSecret') != None:
-		warning_types_selected.append(request.form.get('LeakingSecret'))
-	if request.form.get('SuspiciousFile') != None:
-		warning_types_selected.append(request.form.get('SuspiciousFile'))
-	if request.form.get('SensitiveFile') != None:
-		warning_types_selected.append(request.form.get('SensitiveFile'))
-	if request.form.get('SQLInjection') != None:
-		warning_types_selected.append(request.form.get('SQLInjection'))
-	if request.form.get('SetupScript') != None:
-		warning_types_selected.append(request.form.get('SetupScript'))
-	if request.form.get('FunctionCall') != None:
-		warning_types_selected.append(request.form.get('FunctionCall'))
-	if request.form.get('ModuleImport') != None:
-		warning_types_selected.append(request.form.get('ModuleImport'))
-	if request.form.get('Base64Blob') != None:
-		warning_types_selected.append(request.form.get('Base64Blob'))
-	if request.form.get('Binwalk') != None:
-		warning_types_selected.append(request.form.get('Binwalk'))
-	if request.form.get('CryptoKeyGeneration') != None:
-		warning_types_selected.append(request.form.get('CryptoKeyGeneration'))
-	if request.form.get('DataProcessing') != None:
-		warning_types_selected.append(request.form.get('DataProcessing'))
-	if request.form.get('Detection') != None:
-		warning_types_selected.append(request.form.get('Detection'))
-	if request.form.get('InvalidRequirement') != None:
-		warning_types_selected.append(request.form.get('InvalidRequirement'))
-	if request.form.get('MalformedXML') != None:
-		warning_types_selected.append(request.form.get('MalformedXML'))
-	if request.form.get('ArchiveAnomaly') != None:
-		warning_types_selected.append(request.form.get('ArchiveAnomaly'))
-	if request.form.get('SuspiciousArchiveEntry') != None:
-		warning_types_selected.append(request.form.get('SuspiciousArchiveEntry'))
-	if request.form.get('OutdatedPackage') != None:
-		warning_types_selected.append(request.form.get('OutdatedPackage'))
-	if request.form.get('UnpinnedPackage') != None:
-		warning_types_selected.append(request.form.get('UnpinnedPackage'))
-	if request.form.get('TaintAnomaly') != None:
-		warning_types_selected.append(request.form.get('TaintAnomaly'))
-	if request.form.get('Wheel') != None:
-		warning_types_selected.append(request.form.get('Wheel'))
-	if request.form.get('StringMatch') != None:
-		warning_types_selected.append(request.form.get('StringMatch'))
-	if request.form.get('FileStats') != None:
-		warning_types_selected.append(request.form.get('FileStats'))
-	if request.form.get('YaraMatch') != None:
-		warning_types_selected.append(request.form.get('YaraMatch'))
-	if request.form.get('YaraError') != None:
-		warning_types_selected.append(request.form.get('YaraError'))
-	if request.form.get('ASTAnalysisError') != None:
-		warning_types_selected.append(request.form.get('ASTAnalysisError'))
-	if request.form.get('ASTParseError') != None:
-		warning_types_selected.append(request.form.get('ASTParseError'))
-	if request.form.get('ASTPattern') != None:
-		warning_types_selected.append(request.form.get('ASTPattern'))
-	if request.form.get('Misc') != None:
-		warning_types_selected.append(request.form.get('Misc'))
-	if request.form.get('HighEntropyString') != None:
-		warning_types_selected.append(request.form.get('HighEntropyString'))
-	if request.form.get('HighEntropyString') != None:
-		warning_types_selected.append(request.form.get('HighEntropyString'))'''
-
 	return warning_types_selected
 
 # #########################################################################################################
